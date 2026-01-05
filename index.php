@@ -2,7 +2,7 @@
 require_once 'config.php';
 checkLogin();
 
-// ดึงข้อมูลสำหรับแดชบอร์ด
+// ດຶງຂໍ້ມູນສຳລັບແດຊບອດ
 $stmt = $pdo->query("SELECT SUM(stock) as total_stock, SUM(stock * cost) as total_cost FROM products");
 $stock_data = $stmt->fetch();
 
@@ -12,7 +12,7 @@ $sales_data = $stmt->fetch();
 $stmt = $pdo->query("SELECT SUM(si.quantity) as today_items FROM sale_items si JOIN sales s ON si.sale_id = s.id WHERE DATE(s.sale_date) = CURDATE()");
 $items_data = $stmt->fetch();
 
-// ดึงรายการขายวันนี้
+// ດຶງລາຍການຂາຍມື້ນີ້
 $stmt = $pdo->query("
     SELECT s.*, si.*, p.name, p.barcode 
     FROM sales s 
@@ -23,398 +23,423 @@ $stmt = $pdo->query("
 ");
 $today_sales = $stmt->fetchAll();
 
-// ดึงข้อมูลสินค้า
+// ດຶງຂໍ້ມູນສິນຄ້າ
 $stmt = $pdo->query("SELECT * FROM products ORDER BY name");
 $products = $stmt->fetchAll();
 
-// ดึงอัตราแลกเปลี่ยน
+// ດຶງອັດຕາແລກປ່ຽນ
 $stmt = $pdo->query("SELECT * FROM currencies");
 $currencies = $stmt->fetchAll();
-?><!DOCTYPE html>
-<html lang="th">
+?>
+<!DOCTYPE html>
+<html lang="lo">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบขายเสื้อฝ้า</title>
+    <title>ລະບົບຂາຍເສື້ອຜ້າ POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
         
-        /* --- CSS สำหรับการพิมพ์ (ฉบับแก้ไข) --- */
-        @media print {
-            body:not(.printing-receipt) * {
-                display: none;
-            }
-
-            body.printing-receipt > *:not(#receiptModal) {
-                display: none !important;
-            }
-
-            body.printing-receipt #receiptModal {
-                display: block !important;
-                position: static !important;
-                width: 100%;
-                height: auto;
-                overflow: visible !important;
-            }
-            
-            body.printing-receipt #receiptModal > div,
-            body.printing-receipt #receiptModal > div > div,
-            body.printing-receipt #receiptModal > div > div > div {
-                display: block !important;
-                background: none !important;
-                box-shadow: none !important;
-                border: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            
-            body.printing-receipt #receiptModal .flex.space-x-4 {
-                display: none !important;
-            }
-            
-            body.printing-receipt #receiptModal .receipt-print {
-                position: static !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                box-shadow: none !important;
-                border: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                font-size: 10px !important;
-                font-family: 'Courier New', monospace;
-            }
-
-            @page {
-                size: auto;
-                margin: 5mm;
-            }
+        /* Smooth Transition Animations */
+        .fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .receipt-print {
-            width: 80mm;
-            max-width: 80mm;
-            font-size: 10px;
-            font-family: 'Courier New', monospace;
-            line-height: 1.3;
-            padding: 5mm;
-            box-sizing: border-box;
+
+        /* Active Menu Style */
+        .nav-item.active {
+            background: linear-gradient(to right, #eff6ff, #ffffff);
+            border-right: 4px solid #2563eb;
+            color: #2563eb;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Print Styles (80mm Support) */
+        @media print {
+            body:not(.printing-receipt) * { display: none; }
+            body.printing-receipt > *:not(#receiptModal) { display: none !important; }
+            body.printing-receipt #receiptModal { 
+                display: block !important; 
+                position: static !important; 
+                width: 100%; 
+                height: auto; 
+                overflow: visible !important; 
+                box-shadow: none !important;
+                background: white !important;
+            }
+            body.printing-receipt #receiptModal .no-print-in-modal { display: none !important; }
+            .receipt-print { width: 80mm !important; max-width: 80mm !important; border: none !important; padding: 0 !important; margin: 0 !important; font-size: 10px !important; }
+            @page { size: auto; margin: 0; }
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-blue-600 text-white shadow-lg">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-4">
-                    <i class="fas fa-tshirt text-2xl"></i>
-                    <h1 class="text-xl font-bold">ระบบขายเสื้อฝ้า</h1>
+<body class="bg-gray-50 h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-white shadow-2xl z-20 hidden md:flex flex-col transition-all duration-300">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-500/30">
+                    <i class="fas fa-tshirt text-xl"></i>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <span class="text-sm"><?php echo $_SESSION['user_name']; ?></span>
-                    <a href="logout.php" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">
-                        <i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบ
+                <div>
+                    <h1 class="text-lg font-bold text-gray-800 tracking-wide">POS System</h1>
+                    <p class="text-xs text-gray-500">ຮ້ານຂາຍເສື້ອຜ້າ</p>
+                </div>
+            </div>
+
+            <ul class="space-y-2">
+                <li>
+                    <a href="#" onclick="showPage('dashboard', this)" class="nav-item active flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
+                        <i class="fas fa-chart-pie w-8 text-center"></i>
+                        <span class="font-medium">ແດຊບອດ</span>
                     </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showPage('sell', this)" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
+                        <i class="fas fa-cash-register w-8 text-center"></i>
+                        <span class="font-medium">ຂາຍສິນຄ້າ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showPage('sales', this)" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
+                        <i class="fas fa-receipt w-8 text-center"></i>
+                        <span class="font-medium">ປະຫວັດການຂາຍ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="products.php" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
+                        <i class="fas fa-box w-8 text-center"></i>
+                        <span class="font-medium">ຈັດການສິນຄ້າ</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showPage('shop', this)" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
+                        <i class="fas fa-store w-8 text-center"></i>
+                        <span class="font-medium">ຕັ້ງຄ່າຮ້ານຄ້າ</span>
+                    </a>
+                </li>
+                 <?php if ($_SESSION['user_role'] === 'admin'): ?>
+                <div class="pt-4 pb-2">
+                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase">Admin</p>
+                </div>
+                <li><a href="employees.php" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200"><i class="fas fa-users w-8 text-center"></i><span class="font-medium">ພະນັກງານ</span></a></li>
+                <li><a href="currency.php" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200"><i class="fas fa-coins w-8 text-center"></i><span class="font-medium">ສະກຸນເງິນ</span></a></li>
+                <?php endif; ?>
+            </ul>
+        </div>
+        
+        <div class="mt-auto p-4 border-t border-gray-100">
+            <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                    <?php echo substr($_SESSION['user_name'], 0, 1); ?>
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-bold text-gray-800 truncate"><?php echo $_SESSION['user_name']; ?></p>
+                    <a href="logout.php" class="text-xs text-red-500 hover:text-red-700 font-medium">ອອກຈາກລະບົບ</a>
                 </div>
             </div>
         </div>
-    </nav>
+    </aside>
 
-    <!-- Sidebar -->
-    <div class="flex">
-        <aside class="w-64 bg-white shadow-lg min-h-screen">
-            <div class="p-4">
-                <ul class="space-y-2">
-                    <li><a href="#" onclick="showPage('dashboard')" class="block w-full text-left p-3 rounded hover:bg-blue-50 flex items-center"><i class="fas fa-chart-dashboard mr-3"></i>หน้าหลัก</a></li>
-                    <li><a href="#" onclick="showPage('sell')" class="block w-full text-left p-3 rounded hover:bg-blue-50 flex items-center"><i class="fas fa-cash-register mr-3"></i>ขายสินค้า</a></li>
-                    <li><a href="#" onclick="showPage('sales')" class="block w-full text-left p-3 rounded hover:bg-blue-50 flex items-center"><i class="fas fa-receipt mr-3"></i>รายการขาย</a></li>
-                    <li><a href="products.php" class="block w-full text-left p-3 rounded hover:bg-blue-50 flex items-center"><i class="fas fa-box mr-3"></i>จัดการสินค้า</a></li>
-                    <li><a href="#" onclick="showPage('shop')" class="block w-full text-left p-3 rounded hover:bg-blue-50 flex items-center"><i class="fas fa-store mr-3"></i>จัดการร้านค้า</a></li>
-                    <?php if ($_SESSION['user_role'] === 'admin'): ?>
-                    <li><a href="employees.php" class="block w-full text-left p-3 rounded hover:bg-blue-50 flex items-center"><i class="fas fa-users mr-3"></i>จัดการพนักงาน</a></li>
-                    <li><a href="currency.php" class="block w-full text-left p-3 rounded hover:bg-blue-50 flex items-center"><i class="fas fa-coins mr-3"></i>จัดการสกุลเงิน</a></li>
-                    <?php endif; ?>
-                </ul>
+    <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative">
+        <div class="md:hidden flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm">
+            <h1 class="text-lg font-bold text-blue-600">POS System</h1>
+            <a href="logout.php" class="text-red-500"><i class="fas fa-sign-out-alt"></i></a>
+        </div>
+
+        <div id="dashboard" class="page fade-in-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">ພາບລວມລະບົບ</h2>
+                <span class="text-sm text-gray-500"><?php echo date('d/m/Y'); ?></span>
             </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="flex-1 p-6">
-            <!-- Dashboard Page -->
-            <div id="dashboard" class="page">
-                <h2 class="text-2xl font-bold mb-6">แดชบอร์ด</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/30">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-blue-100 text-sm font-medium mb-1">ຍອດຂາຍມື້ນີ້</p>
+                            <h3 class="text-3xl font-bold"><?php echo number_format($sales_data['today_sales'] ?? 0); ?></h3>
+                        </div>
+                        <div class="p-2 bg-white/20 rounded-lg"><i class="fas fa-chart-line text-2xl"></i></div>
+                    </div>
+                </div>
                 
-                <!-- Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-blue-100 rounded-full"><i class="fas fa-boxes text-blue-600"></i></div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-600">สต็อกทั้งหมด</p>
-                                <p class="text-2xl font-bold"><?php echo number_format($stock_data['total_stock'] ?? 0); ?></p>
-                            </div>
+                <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg shadow-green-500/30">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-green-100 text-sm font-medium mb-1">ກຳໄລມື້ນີ້</p>
+                            <h3 class="text-3xl font-bold"><?php echo number_format($sales_data['today_profit'] ?? 0); ?></h3>
                         </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-green-100 rounded-full"><i class="fas fa-dollar-sign text-green-600"></i></div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-600">ต้นทุนสต็อก</p>
-                                <p class="text-2xl font-bold"><?php echo number_format($stock_data['total_cost'] ?? 0); ?></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-yellow-100 rounded-full"><i class="fas fa-chart-line text-yellow-600"></i></div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-600">ยอดขายวันนี้</p>
-                                <p class="text-2xl font-bold"><?php echo number_format($sales_data['today_sales'] ?? 0); ?></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-purple-100 rounded-full"><i class="fas fa-coins text-purple-600"></i></div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-600">กำไรวันนี้</p>
-                                <p class="text-2xl font-bold"><?php echo number_format($sales_data['today_profit'] ?? 0); ?></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-red-100 rounded-full"><i class="fas fa-shopping-cart text-red-600"></i></div>
-                            <div class="ml-4">
-                                <p class="text-sm text-gray-600">ขายแล้ววันนี้</p>
-                                <p class="text-2xl font-bold"><?php echo number_format($items_data['today_items'] ?? 0); ?></p>
-                            </div>
-                        </div>
+                        <div class="p-2 bg-white/20 rounded-lg"><i class="fas fa-coins text-2xl"></i></div>
                     </div>
                 </div>
-
-                <!-- Today's Sales -->
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b"><h3 class="text-lg font-semibold">รายการขายวันนี้</h3></div>
-                    <div class="p-6">
-                        <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead>
-                                    <tr class="border-b">
-                                        <th class="text-left py-2">เวลา</th>
-                                        <th class="text-left py-2">บาร์โค้ด</th>
-                                        <th class="text-left py-2">สินค้า</th>
-                                        <th class="text-left py-2">จำนวน</th>
-                                        <th class="text-left py-2">ราคา</th>
-                                        <th class="text-left py-2">รวม</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (empty($today_sales)): ?>
-                                        <tr><td colspan="6" class="text-center py-8 text-gray-500">ยังไม่มีรายการขายวันนี้</td></tr>
-                                    <?php else: ?>
-                                        <?php foreach ($today_sales as $sale): ?>
-                                        <tr>
-                                            <td class="py-2"><?php echo date('H:i:s', strtotime($sale['sale_date'])); ?></td>
-                                            <td class="py-2"><?php echo htmlspecialchars($sale['barcode']); ?></td>
-                                            <td class="py-2"><?php echo htmlspecialchars($sale['name']); ?></td>
-                                            <td class="py-2"><?php echo $sale['quantity']; ?></td>
-                                            <td class="py-2"><?php echo number_format($sale['price']); ?> บาท</td>
-                                            <td class="py-2"><?php echo number_format($sale['price'] * $sale['quantity']); ?> บาท</td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sales Page -->
-            <div id="sales" class="page hidden">
-                <h2 class="text-2xl font-bold mb-6">รายการขาย</h2>
                 
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-lg font-semibold">ประวัติการขาย</h3>
-                            <div class="flex space-x-2">
-                                <input type="date" id="salesDateFilter" class="border rounded px-3 py-2" value="<?php echo date('Y-m-d'); ?>">
-                                <button onclick="filterSales()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                                    <i class="fas fa-search mr-2"></i>ค้นหา
-                                </button>
-                            </div>
+                <div class="bg-white rounded-2xl p-6 text-gray-800 shadow-md border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">ບິນຂາຍມື້ນີ້</p>
+                            <h3 class="text-3xl font-bold text-gray-800"><?php echo number_format($sales_data['today_orders'] ?? 0); ?></h3>
                         </div>
+                        <div class="p-2 bg-purple-100 text-purple-600 rounded-lg"><i class="fas fa-file-invoice text-2xl"></i></div>
                     </div>
+                </div>
 
-                    <!-- Summary Cards for Sales Page -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 px-6" id="salesSummary">
-                        <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
-                            <p class="text-sm text-gray-600">ยอดขายรวม (วันที่เลือก)</p>
-                            <p class="text-2xl font-bold text-blue-600" id="summaryTotalSales">0 บาท</p>
+                <div class="bg-white rounded-2xl p-6 text-gray-800 shadow-md border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">ສິນຄ້າຄົງເຫຼືອ</p>
+                            <h3 class="text-3xl font-bold text-gray-800"><?php echo number_format($stock_data['total_stock'] ?? 0); ?></h3>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
-                            <p class="text-sm text-gray-600">กำไรรวม (วันที่เลือก)</p>
-                            <p class="text-2xl font-bold text-green-600" id="summaryTotalProfit">0 บาท</p>
-                        </div>
-                    </div>
-
-                    <div class="p-6">
-                        <div id="salesList" class="overflow-x-auto">
-                            <!-- Sales list will be loaded here -->
-                        </div>
+                        <div class="p-2 bg-orange-100 text-orange-600 rounded-lg"><i class="fas fa-boxes text-2xl"></i></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Shop Management Page -->
-            <div id="shop" class="page hidden">
-                <h2 class="text-2xl font-bold mb-6">จัดการร้านค้า</h2>
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b"><h3 class="text-lg font-semibold">ข้อมูลร้านค้า</h3></div>
-                    <div class="p-6">
-                        <form id="shopForm" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium mb-2">ชื่อร้านค้า</label>
-                                <input type="text" id="shopName" class="w-full p-3 border rounded-lg" placeholder="ชื่อร้านค้า">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2">ที่อยู่</label>
-                                <textarea id="shopAddress" class="w-full p-3 border rounded-lg" rows="3" placeholder="ที่อยู่ร้านค้า"></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2">เบอร์โทรศัพท์</label>
-                                <input type="text" id="shopPhone" class="w-full p-3 border rounded-lg" placeholder="เบอร์โทรศัพท์">
-                            </div>
-                            <button type="button" onclick="saveShopInfo()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700">
-                                <i class="fas fa-save mr-2"></i>บันทึกข้อมูล
-                            </button>
-                        </form>
-                    </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800">ລາຍການຂາຍລ່າສຸດ</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full whitespace-nowrap">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">ເວລາ</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">ບາໂຄດ</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">ສິນຄ້າ</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">ຈຳນວນ</th>
+                                <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">ລາຄາລວມ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php if (empty($today_sales)): ?>
+                                <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">ຍັງບໍ່ມີການຂາຍມື້ນີ້</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($today_sales as $sale): ?>
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4 text-sm text-gray-500"><?php echo date('H:i', strtotime($sale['sale_date'])); ?></td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 font-mono"><?php echo $sale['barcode']; ?></td>
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900"><?php echo $sale['name']; ?></td>
+                                    <td class="px-6 py-4 text-sm text-center"><span class="bg-blue-100 text-blue-700 py-1 px-3 rounded-full text-xs font-bold"><?php echo $sale['quantity']; ?></span></td>
+                                    <td class="px-6 py-4 text-sm text-right font-bold text-gray-700"><?php echo number_format($sale['price'] * $sale['quantity']); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Sell Page -->
-            <div id="sell" class="page hidden">
-                <h2 class="text-2xl font-bold mb-6">ขายสินค้า</h2>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Product Input -->
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-semibold mb-4">เพิ่มสินค้า</h3>
+        <div id="sell" class="page hidden fade-in-up">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">ຂາຍສິນຄ້າ</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-150px)]">
+                <div class="lg:col-span-7 flex flex-col gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <form id="sellForm">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">รหัสบาร์โค้ด</label>
-                                    <input type="text" id="barcodeInput" class="w-full p-3 border rounded-lg" placeholder="สแกนหรือพิมพ์บาร์โค้ด" autofocus>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">ລະຫັດບາໂຄດ</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="barcodeInput" class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-lg" placeholder="ສະແກນ ຫຼື ພິມລະຫັດ..." autofocus>
                                 </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label class="block text-sm font-medium mb-2">เลือกสินค้า</label>
-                                    <select id="productSelect" class="w-full p-3 border rounded-lg">
-                                        <option value="">-- เลือกสินค้า --</option>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">ເລືອກສິນຄ້າ</label>
+                                    <select id="productSelect" class="w-full p-3 border border-gray-200 rounded-xl bg-gray-50">
+                                        <option value="">-- ຄົ້ນຫາສິນຄ້າ --</option>
                                         <?php foreach ($products as $product): ?>
-                                            <option value="<?php echo $product['id']; ?>" data-barcode="<?php echo htmlspecialchars($product['barcode']); ?>" data-price="<?php echo $product['price']; ?>" data-cost="<?php echo $product['cost']; ?>" data-stock="<?php echo $product['stock']; ?>" data-name="<?php echo htmlspecialchars($product['name']); ?>">
-                                                <?php echo htmlspecialchars($product['name']); ?> (คงเหลือ: <?php echo $product['stock']; ?>)
+                                            <option value="<?php echo $product['id']; ?>" 
+                                                data-barcode="<?php echo htmlspecialchars($product['barcode']); ?>" 
+                                                data-price="<?php echo $product['price']; ?>" 
+                                                data-cost="<?php echo $product['cost']; ?>" 
+                                                data-stock="<?php echo $product['stock']; ?>" 
+                                                data-name="<?php echo htmlspecialchars($product['name']); ?>">
+                                                <?php echo htmlspecialchars($product['name']); ?> (ເຫຼືອ: <?php echo $product['stock']; ?>)
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium mb-2">จำนวน</label>
-                                        <input type="number" id="quantityInput" value="1" min="1" class="w-full p-3 border rounded-lg">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium mb-2">ราคาขาย (บาท)</label>
-                                        <input type="number" id="priceInput" step="0.01" min="0" class="w-full p-3 border rounded-lg" placeholder="ราคาขาย">
-                                    </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">ຈຳນວນ</label>
+                                    <input type="number" id="quantityInput" value="1" min="1" class="w-full p-3 border border-gray-200 rounded-xl text-center font-bold">
                                 </div>
-                                <div class="flex space-x-2">
-                                    <button type="button" onclick="addToCart()" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"><i class="fas fa-plus mr-2"></i>เพิ่มลงตะกร้า</button>
-                                    <button type="button" onclick="clearSellForm()" class="bg-gray-500 text-white p-3 rounded-lg hover:bg-gray-600"><i class="fas fa-eraser"></i></button>
-                                </div>
+                            </div>
+                            <input type="hidden" id="priceInput"> <div class="flex gap-3">
+                                <button type="button" onclick="addToCart()" class="flex-1 bg-blue-600 text-white p-4 rounded-xl hover:bg-blue-700 font-bold shadow-lg shadow-blue-500/30 transition-all active:scale-95">
+                                    <i class="fas fa-plus-circle mr-2"></i> ເພີ່ມລົງກະຕ່າ
+                                </button>
+                                <button type="button" onclick="clearSellForm()" class="px-6 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 font-medium">
+                                    <i class="fas fa-eraser"></i>
+                                </button>
                             </div>
                         </form>
                     </div>
+                </div>
 
-                    <!-- Shopping Cart -->
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold">ตะกร้าสินค้า <span id="cartCount" class="text-sm text-gray-500">(0 รายการ)</span></h3>
-                            <button onclick="clearCart()" class="text-red-600 hover:text-red-800"><i class="fas fa-trash mr-1"></i>ล้างตะกร้า</button>
+                <div class="lg:col-span-5 flex flex-col h-full">
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col h-full overflow-hidden">
+                        <div class="p-5 bg-gray-800 text-white flex justify-between items-center">
+                            <h3 class="font-bold text-lg"><i class="fas fa-shopping-cart mr-2"></i> ກະຕ່າສິນຄ້າ</h3>
+                            <button onclick="clearCart()" class="text-red-300 hover:text-white text-sm"><i class="fas fa-trash mr-1"></i> ລ້າງ</button>
                         </div>
-                        <div id="cartItems" class="mb-4 max-h-80 overflow-y-auto"><div class="text-gray-500 text-center py-8">ตะกร้าว่าง</div></div>
-                        <div class="border-t pt-4">
-                            <div class="space-y-2 mb-4">
-                                <div class="flex justify-between"><span>ยอดรวม:</span><span id="subtotal">0 บาท</span></div>
-                                <div class="flex justify-between items-center">
-                                    <span>ส่วนลด:</span>
-                                    <div class="flex items-center space-x-2">
-                                        <input type="number" id="discountInput" value="0" min="0" max="100" class="w-16 p-1 border rounded text-center" onchange="updateCartTotal()">
-                                        <span>%</span>
-                                        <span id="discountAmount" class="text-red-600">-0 บาท</span>
-                                    </div>
+                        
+                        <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                            <div class="text-gray-400 text-center py-10 flex flex-col items-center">
+                                <i class="fas fa-basket-shopping text-4xl mb-3 opacity-30"></i>
+                                <p>ຍັງບໍ່ມີສິນຄ້າໃນກະຕ່າ</p>
+                            </div>
+                        </div>
+
+                        <div class="p-6 bg-white border-t border-gray-100 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+                            <div class="space-y-3 mb-6">
+                                <div class="flex justify-between text-gray-600">
+                                    <span>ລວມເງິນ:</span>
+                                    <span id="subtotal" class="font-medium">0</span>
                                 </div>
-                                <div class="flex justify-between text-sm text-green-600"><span>กำไร:</span><span id="realProfit">0 บาท</span></div>
-                                <div class="flex justify-between font-bold text-lg border-t pt-2">
-                                    <span>ยอดชำระ:</span>
+                                <div class="flex justify-between items-center text-gray-600">
+                                    <span>ສ່ວນຫຼຸດ:</span>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="discountInput" value="0" min="0" max="100" class="w-16 p-1 border rounded text-center text-sm" oninput="updateCartTotal()">
+                                        <span class="text-xs">%</span>
+                                    </div>
+                                    <span id="discountAmount" class="text-red-500">-0</span>
+                                </div>
+                                <div class="flex justify-between text-sm text-green-600">
+                                    <span>ກຳໄລ:</span>
+                                    <span id="realProfit">0 บาท</span>
+                                </div>
+                                <div class="flex justify-between items-end pt-4 border-t border-dashed">
+                                    <span class="text-gray-800 font-bold text-lg">ຍອດຊຳລະ:</span>
                                     <div class="text-right">
-                                        <div id="cartTotal">0 บาท</div>
-                                        <div id="cartTotalLak" class="text-sm text-gray-600">0 กีบ</div>
+                                        <div id="cartTotal" class="text-2xl font-bold text-blue-600">0</div>
+                                        <div id="cartTotalLak" class="text-sm text-gray-500">0 ກີບ</div>
                                     </div>
                                 </div>
                             </div>
-                            <button onclick="showCheckoutConfirm()" class="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700" id="checkoutBtn" disabled><i class="fas fa-credit-card mr-2"></i>ชำระเงิน</button>
+                            <button onclick="showCheckoutConfirm()" id="checkoutBtn" disabled class="w-full bg-green-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg shadow-green-500/30 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95">
+                                <i class="fas fa-money-bill-wave mr-2"></i> ຊຳລະເງິນ
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
+
+        <div id="sales" class="page hidden fade-in-up">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">ປະຫວັດການຂາຍ</h2>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                    <div class="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
+                        <input type="date" id="salesDateFilter" class="bg-transparent border-none p-2 outline-none text-gray-700" value="<?php echo date('Y-m-d'); ?>">
+                        <button onclick="filterSales()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">ຍອດຂາຍລວມ</p>
+                            <p class="text-xl font-bold text-blue-600" id="summaryTotalSales">0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">ກຳໄລລວມ</p>
+                            <p class="text-xl font-bold text-green-600" id="summaryTotalProfit">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="salesList" class="overflow-x-auto">
+                    </div>
+            </div>
+        </div>
+
+        <div id="shop" class="page hidden fade-in-up">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">ຕັ້ງຄ່າຮ້ານຄ້າ</h2>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 max-w-2xl p-8">
+                <form id="shopForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ຊື່ຮ້ານຄ້າ</label>
+                        <input type="text" id="shopName" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ທີ່ຢູ່</label>
+                        <textarea id="shopAddress" rows="3" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ເບີໂທລະສັບ</label>
+                        <input type="text" id="shopPhone" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <button type="button" onclick="saveShopInfo()" class="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 font-medium shadow-lg shadow-blue-500/30">
+                        <i class="fas fa-save mr-2"></i> ບັນທຶກຂໍ້ມູນ
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="checkoutModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl transform transition-all scale-100">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">ຢືນຢັນການຊຳລະເງິນ</h3>
+                <button onclick="closeCheckoutModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="bg-gray-50 p-4 rounded-xl space-y-2">
+                    <div class="flex justify-between text-sm text-gray-600"><span>ຈຳນວນລາຍການ:</span><span id="confirmItemCount" class="font-medium">0</span></div>
+                    <div class="flex justify-between text-sm text-gray-600"><span>ຍອດລວມ:</span><span id="confirmSubtotal" class="font-medium">0</span></div>
+                    <div class="flex justify-between text-sm text-red-500"><span>ສ່ວນຫຼຸດ:</span><span id="confirmDiscount">0</span></div>
+                    <div class="border-t border-dashed pt-2 mt-2 flex justify-between items-end">
+                        <span class="font-bold text-gray-800">ຍອດຊຳລະສຸດທິ:</span>
+                        <div class="text-right">
+                            <div id="confirmTotal" class="text-xl font-bold text-blue-600">0</div>
+                            <div id="confirmTotalLak" class="text-xs text-gray-500">0 ກີບ</div>
+                        </div>
+                    </div>
+                </div>
+                <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                    <input type="checkbox" id="printReceiptCheck" class="w-5 h-5 text-blue-600 rounded" checked>
+                    <span class="text-gray-700 font-medium">ພິມໃບເສັດອັດຕະໂນມັດ</span>
+                </label>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeCheckoutModal()" class="flex-1 py-3 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium">ຍົກເລີກ</button>
+                    <button onclick="confirmCheckout()" class="flex-1 py-3 text-white bg-green-600 hover:bg-green-700 rounded-xl font-bold shadow-lg shadow-green-500/30">ຢືນຢັນ</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Modals -->
-    <div id="checkoutModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg max-w-md w-full">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">ยืนยันการชำระเงิน</h3><button onclick="closeCheckoutModal()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button></div>
-                <div class="mb-6"><div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="flex justify-between mb-2"><span>จำนวนรายการ:</span><span id="confirmItemCount">0 รายการ</span></div>
-                    <div class="flex justify-between mb-2"><span>ยอดรวม:</span><span id="confirmSubtotal">0 บาท</span></div>
-                    <div class="flex justify-between mb-2"><span>ส่วนลด:</span><span id="confirmDiscount" class="text-red-600">-0 บาท</span></div>
-                    <div class="flex justify-between font-bold text-lg border-t pt-2"><span>ยอดชำระ:</span><div class="text-right"><div id="confirmTotal">0 บาท</div><div id="confirmTotalLak" class="text-sm text-gray-600">0 กีบ</div></div></div>
-                </div></div>
-                <div class="mb-6"><label class="flex items-center"><input type="checkbox" id="printReceiptCheck" class="mr-2" checked><span>พิมพ์ใบเสร็จหลังชำระเงิน</span></label></div>
-                <div class="flex space-x-4">
-                    <button onclick="confirmCheckout()" class="flex-1 bg-green-600 text-white p-3 rounded-lg hover:bg-green-700"><i class="fas fa-check mr-2"></i>ยืนยันชำระเงิน</button>
-                    <button onclick="closeCheckoutModal()" class="flex-1 bg-gray-500 text-white p-3 rounded-lg hover:bg-gray-600">ยกเลิก</button>
+    <div id="receiptModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-[350px] shadow-2xl"> <div class="p-4 border-b flex justify-between items-center no-print-in-modal">
+                <h3 class="font-bold">ໃບເສັດ</h3>
+                <button onclick="closeReceiptModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="receiptContent" class="p-4 bg-white text-black font-mono text-sm">
                 </div>
+            <div class="p-4 border-t flex gap-2 no-print-in-modal">
+                <button onclick="printReceipt()" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"><i class="fas fa-print mr-2"></i> ພິມ</button>
+                <button onclick="closeReceiptModal()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300">ປິດ</button>
             </div>
         </div>
     </div>
-    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg max-w-md w-full">
-            <div class="p-6 text-center">
-                <div class="mb-4"><i class="fas fa-check-circle text-6xl text-green-500"></i></div>
-                <h3 class="text-xl font-semibold mb-2">ชำระเงินสำเร็จ!</h3>
-                <p class="text-gray-600 mb-6">บันทึกการขายเรียบร้อยแล้ว</p>
-                <div class="flex space-x-4">
-                    <button onclick="showReceiptFromSuccess()" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"><i class="fas fa-print mr-2"></i>พิมพ์ใบเสร็จ</button>
-                    <button onclick="closeSuccessModal()" class="flex-1 bg-gray-500 text-white p-3 rounded-lg hover:bg-gray-600">ปิด</button>
-                </div>
+
+    <div id="successModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4 animate-bounce-in">
+            <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
+                <i class="fas fa-check"></i>
             </div>
-        </div>
-    </div>
-    <div id="receiptModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg max-w-sm w-full">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">ใบเสร็จรับเงิน</h3><button onclick="closeReceiptModal()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button></div>
-                <div id="receiptContent" class="receipt-print border mb-4"></div>
-                <div class="flex space-x-4">
-                    <button onclick="printReceipt()" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"><i class="fas fa-print mr-2"></i>พิมพ์ใบเสร็จ</button>
-                    <button onclick="closeReceiptModal()" class="flex-1 bg-gray-500 text-white p-3 rounded-lg hover:bg-gray-600">ปิด</button>
-                </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">ຊຳລະເງິນສຳເລັດ!</h3>
+            <p class="text-gray-500 mb-6">ບັນທຶກຂໍ້ມູນການຂາຍຮຽບຮ້ອຍແລ້ວ</p>
+            <div class="flex gap-3">
+                <button onclick="showReceiptFromSuccess()" class="flex-1 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl font-medium">ພິມໃບເສັດ</button>
+                <button onclick="closeSuccessModal()" class="flex-1 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium">ປິດ</button>
             </div>
         </div>
     </div>
@@ -425,378 +450,375 @@ $currencies = $stmt->fetchAll();
         const currencies = <?php echo json_encode($currencies); ?>;
         let currentSale = null;
 
-        // --- Page Navigation ---
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
-            document.getElementById(pageId).classList.remove('hidden');
+        // --- Navigation ---
+        function showPage(pageId, element) {
+            // Update Active Menu
+            if(element) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                element.classList.add('active');
+            }
             
+            // Show Page with Animation
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+                page.classList.remove('fade-in-up');
+            });
+            
+            const selectedPage = document.getElementById(pageId);
+            selectedPage.classList.remove('hidden');
+            void selectedPage.offsetWidth; // Trigger Reflow
+            selectedPage.classList.add('fade-in-up');
+
             if (pageId === 'sell') {
-                document.getElementById('barcodeInput').focus();
+                setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
             } else if (pageId === 'sales') {
                 filterSales();
             }
         }
 
-        // --- Selling Page Logic ---
+        // --- Selling Logic ---
         document.getElementById('barcodeInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const barcode = this.value.trim();
-                if (barcode) {
-                    const product = products.find(p => p.barcode === barcode);
-                    if (product) {
-                        document.getElementById('productSelect').value = product.id;
-                        document.getElementById('priceInput').value = product.price;
-                        addToCart();
-                    } else {
-                        alert('ไม่พบสินค้าที่มีบาร์โค้ดนี้');
-                        this.select();
-                    }
+                const product = products.find(p => p.barcode === barcode);
+                if (product) {
+                    addProductToCart(product);
+                    this.value = '';
+                } else {
+                    alert('ບໍ່ພົບສິນຄ້ານີ້!');
                 }
             }
         });
 
         document.getElementById('productSelect').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption.value) {
-                document.getElementById('barcodeInput').value = selectedOption.dataset.barcode;
-                document.getElementById('priceInput').value = selectedOption.dataset.price;
-            } else {
-                clearSellForm();
+            if (this.value) {
+                const product = products.find(p => p.id == this.value);
+                document.getElementById('priceInput').value = product.price; // Set default price
             }
         });
 
         function addToCart() {
-            const productSelect = document.getElementById('productSelect');
-            const quantity = parseInt(document.getElementById('quantityInput').value);
-            const customPrice = parseFloat(document.getElementById('priceInput').value);
-            const selectedProductId = productSelect.value;
+            const select = document.getElementById('productSelect');
+            if (!select.value) return alert('ກະລຸນາເລືອກສິນຄ້າ');
+            const product = products.find(p => p.id == select.value);
+            addProductToCart(product);
+        }
+
+        function addProductToCart(product) {
+            const qtyInput = document.getElementById('quantityInput');
+            const qty = parseInt(qtyInput.value);
             
-            if (!selectedProductId) {
-                alert('กรุณาเลือกสินค้า');
-                return;
-            }
-            const selectedProduct = products.find(p => p.id == selectedProductId);
-            
-            if (!customPrice || customPrice <= 0) {
-                alert('กรุณาใส่ราคาขาย');
-                document.getElementById('priceInput').focus();
-                return;
-            }
-            
-            if (quantity > selectedProduct.stock) {
-                alert(`สินค้าไม่เพียงพอ คงเหลือ ${selectedProduct.stock} ชิ้น`);
-                return;
-            }
-            
-            const existingItem = cart.find(item => item.id == selectedProduct.id && item.price == customPrice);
+            // Check Stock
+            if (qty > product.stock) return alert(`ສິນຄ້າເຫຼືອພຽງ ${product.stock} ອັນ`);
+
+            const existingItem = cart.find(item => item.id == product.id);
             if (existingItem) {
-                if (existingItem.quantity + quantity > selectedProduct.stock) {
-                    alert(`สินค้าไม่เพียงพอ คงเหลือ ${selectedProduct.stock} ชิ้น`);
-                    return;
-                }
-                existingItem.quantity += quantity;
+                if (existingItem.quantity + qty > product.stock) return alert('ສິນຄ້າບໍ່ພໍ');
+                existingItem.quantity += qty;
             } else {
                 cart.push({
-                    id: selectedProduct.id,
-                    barcode: selectedProduct.barcode,
-                    name: selectedProduct.name,
-                    price: customPrice,
-                    cost: parseFloat(selectedProduct.cost),
-                    quantity: quantity,
-                    stock: parseInt(selectedProduct.stock)
+                    id: product.id,
+                    barcode: product.barcode,
+                    name: product.name,
+                    price: parseFloat(product.price),
+                    cost: parseFloat(product.cost),
+                    quantity: qty,
+                    stock: product.stock
                 });
             }
+            updateCartUI();
             
-            updateCartDisplay();
-            clearSellForm();
+            // Reset Form Inputs except Quantity
+            document.getElementById('productSelect').value = '';
+            document.getElementById('barcodeInput').value = '';
             document.getElementById('barcodeInput').focus();
         }
 
         function clearSellForm() {
             document.getElementById('sellForm').reset();
-            document.getElementById('productSelect').value = '';
+            document.getElementById('quantityInput').value = 1;
         }
 
-        function updateCartDisplay() {
-            const cartItemsContainer = document.getElementById('cartItems');
-            const checkoutBtn = document.getElementById('checkoutBtn');
-            const cartCount = document.getElementById('cartCount');
-
-            cartCount.textContent = `(${cart.length} รายการ)`;
-
-            if (cart.length === 0) {
-                cartItemsContainer.innerHTML = '<div class="text-gray-500 text-center py-8">ตะกร้าว่าง</div>';
-                checkoutBtn.disabled = true;
-                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                cartItemsContainer.innerHTML = `
-                    <table class="w-full text-sm">
-                        <thead><tr class="border-b"><th class="text-left py-2">สินค้า</th><th class="text-center py-2">จำนวน</th><th class="text-right py-2">รวม</th><th class="text-center py-2"></th></tr></thead>
-                        <tbody>
-                            ${cart.map((item, index) => `
-                                <tr class="border-b">
-                                    <td class="py-2">
-                                        <div class="font-medium">${item.name}</div>
-                                        <div class="text-xs text-gray-500">${item.barcode}</div>
-                                        <div class="text-xs text-gray-600">${item.price.toLocaleString()} บาท/ชิ้น</div>
-                                    </td>
-                                    <td class="py-2 text-center">
-                                        <div class="flex items-center justify-center space-x-1">
-                                            <button onclick="updateQuantity(${index}, -1)" class="w-6 h-6 bg-red-500 text-white rounded text-xs hover:bg-red-600">-</button>
-                                            <span class="w-8 text-center">${item.quantity}</span>
-                                            <button onclick="updateQuantity(${index}, 1)" class="w-6 h-6 bg-green-500 text-white rounded text-xs hover:bg-green-600">+</button>
-                                        </div>
-                                    </td>
-                                    <td class="py-2 text-right font-medium">${(item.price * item.quantity).toLocaleString()} บาท</td>
-                                    <td class="py-2 text-center"><button onclick="removeFromCart(${index})" class="text-red-600 hover:text-red-800"><i class="fas fa-trash text-xs"></i></button></td>
-                                </tr>`).join('')}
-                        </tbody>
-                    </table>`;
-                checkoutBtn.disabled = false;
-                checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-            updateCartTotal();
-        }
-
-        function updateQuantity(index, change) {
-            const item = cart[index];
-            const newQuantity = item.quantity + change;
+        function updateCartUI() {
+            const container = document.getElementById('cartItems');
+            const count = document.getElementById('cartCount'); // Optional usage
             
-            if (newQuantity <= 0) {
-                removeFromCart(index);
-                return;
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="text-gray-400 text-center py-10 flex flex-col items-center">
+                        <i class="fas fa-basket-shopping text-4xl mb-3 opacity-30"></i>
+                        <p>ຍັງບໍ່ມີສິນຄ້າໃນກະຕ່າ</p>
+                    </div>`;
+                document.getElementById('checkoutBtn').disabled = true;
+            } else {
+                let html = '';
+                cart.forEach((item, index) => {
+                    html += `
+                    <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800 text-sm">${item.name}</h4>
+                            <div class="text-xs text-gray-500">${item.price.toLocaleString()} x ${item.quantity}</div>
+                        </div>
+                        <div class="text-right mx-3">
+                            <span class="font-bold text-blue-600 text-sm">${(item.price * item.quantity).toLocaleString()}</span>
+                        </div>
+                        <button onclick="removeFromCart(${index})" class="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+                    </div>`;
+                });
+                container.innerHTML = html;
+                document.getElementById('checkoutBtn').disabled = false;
             }
-            if (newQuantity > item.stock) {
-                alert(`สินค้าไม่เพียงพอ คงเหลือ ${item.stock} ชิ้น`);
-                return;
-            }
-            item.quantity = newQuantity;
-            updateCartDisplay();
+            calculateTotals(); // Call calculation whenever UI updates
         }
 
         function removeFromCart(index) {
             cart.splice(index, 1);
-            updateCartDisplay();
+            updateCartUI();
         }
 
         function clearCart() {
             cart = [];
-            document.getElementById('discountInput').value = 0;
-            updateCartDisplay();
+            updateCartUI();
         }
 
-        function updateCartTotal() {
+        function calculateTotals() {
+            // ນີ້ຄືຟັງຊັນຫຼັກທີ່ຖືກຮຽກໃຊ້ທັງຕອນອັບເດດກະຕ່າ ແລະ ຕອນພິມສ່ວນຫຼຸດ (oninput)
+            updateCartTotal(); 
+            // Return values for checkout modal
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const discountPercent = parseFloat(document.getElementById('discountInput').value) || 0;
             const discountAmount = subtotal * (discountPercent / 100);
             const total = subtotal - discountAmount;
             
-            // --- Profit Calculation (Corrected) ---
+            // Profit calculation
             const totalCost = cart.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
-            const realProfit = total - totalCost;
-            
-            const lakRate = currencies.find(c => c.code === 'LAK')?.rate || 1;
-            const totalInLak = total * lakRate;
-            
-            document.getElementById('subtotal').textContent = `${subtotal.toLocaleString()} บาท`;
-            document.getElementById('discountAmount').textContent = `-${discountAmount.toLocaleString()} บาท`;
-            document.getElementById('realProfit').textContent = `${realProfit.toLocaleString()} บาท`;
-            document.getElementById('cartTotal').textContent = `${total.toLocaleString()} บาท`;
-            document.getElementById('cartTotalLak').textContent = `${totalInLak.toLocaleString()} กีบ`;
-        }
-        
-        // --- Checkout Logic ---
-        function showCheckoutConfirm() {
-            if (cart.length === 0) return;
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const discount = parseFloat(document.getElementById('discountInput').value) || 0;
-            const discountAmount = subtotal * (discount / 100);
-            const total = subtotal - discountAmount;
-            const lakRate = currencies.find(c => c.code === 'LAK')?.rate || 1;
-            const totalInLak = total * lakRate;
+            const profit = total - totalCost;
 
-            document.getElementById('confirmItemCount').textContent = `${cart.length} รายการ`;
-            document.getElementById('confirmSubtotal').textContent = `${subtotal.toLocaleString()} บาท`;
-            document.getElementById('confirmDiscount').textContent = `-${discountAmount.toLocaleString()} บาท`;
-            document.getElementById('confirmTotal').textContent = `${total.toLocaleString()} บาท`;
-            document.getElementById('confirmTotalLak').textContent = `${totalInLak.toLocaleString()} กีบ`;
+            return { subtotal, discount: discountPercent, total, profit };
+        }
+
+        function updateCartTotal() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // ໃຊ້ oninput ແລ້ວຄ່າຈະຖືກດຶງມາຄຳນວນທັນທີ
+            const discountPercent = parseFloat(document.getElementById('discountInput').value) || 0;
+            const discountAmount = subtotal * (discountPercent / 100);
+            const total = subtotal - discountAmount;
+            
+            // ຄຳນວນກຳໄລ
+            const totalCost = cart.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
+            const realProfit = total - totalCost; // ກຳໄລຄິດຈາກຍອດຂາຍຫຼັງຫັກສ່ວນຫຼຸດ
+
+            const lakRate = currencies.find(c => c.code === 'LAK')?.rate || 1;
+            const totalInLak = total * lakRate;
+            
+            // ອັບເດດ UI
+            if(document.getElementById('subtotal')) {
+                document.getElementById('subtotal').innerText = subtotal.toLocaleString();
+                document.getElementById('discountAmount').innerText = '-' + discountAmount.toLocaleString();
+                document.getElementById('cartTotal').innerText = total.toLocaleString();
+                document.getElementById('cartTotalLak').innerText = totalInLak.toLocaleString() + ' ກີບ';
+                document.getElementById('realProfit').innerText = realProfit.toLocaleString();
+            }
+        }
+
+        // --- Checkout & Modals ---
+        function showCheckoutConfirm() {
+            const totals = calculateTotals();
+            const lakRate = currencies.find(c => c.code === 'LAK')?.rate || 1;
+
+            document.getElementById('confirmItemCount').innerText = cart.length + ' ລາຍການ';
+            document.getElementById('confirmSubtotal').innerText = totals.subtotal.toLocaleString();
+            document.getElementById('confirmDiscount').innerText = '-' + (totals.subtotal * totals.discount / 100).toLocaleString();
+            document.getElementById('confirmTotal').innerText = totals.total.toLocaleString();
+            document.getElementById('confirmTotalLak').innerText = (totals.total * lakRate).toLocaleString() + ' ກີບ';
+            
             document.getElementById('checkoutModal').classList.remove('hidden');
         }
 
         function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
 
         function confirmCheckout() {
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const discount = parseFloat(document.getElementById('discountInput').value) || 0;
-            const total = subtotal * (1 - discount / 100);
-            
-            // --- Profit Calculation (Corrected) ---
-            const totalCost = cart.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
-            const profit = total - totalCost;
-
+            const totals = calculateTotals();
             closeCheckoutModal();
 
             fetch('process_sale.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ items: cart, subtotal, discount, total, profit })
+                body: JSON.stringify({ 
+                    items: cart, 
+                    subtotal: totals.subtotal, 
+                    discount: totals.discount, 
+                    total: totals.total, 
+                    profit: totals.profit 
+                })
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
-                if (data.success) {
+                if(data.success) {
                     currentSale = data.sale;
                     document.getElementById('successModal').classList.remove('hidden');
-                    if (document.getElementById('printReceiptCheck').checked) {
-                        setTimeout(() => showReceipt(data.sale, true), 500);
+                    if(document.getElementById('printReceiptCheck').checked) {
+                        setTimeout(() => showReceipt(currentSale, true), 500);
                     }
                 } else {
-                    alert('เกิดข้อผิดพลาด: ' + data.message);
+                    alert('Error: ' + data.message);
                 }
             })
-            .catch(error => { console.error('Error:', error); alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล'); });
+            .catch(err => alert('ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່'));
         }
 
         function closeSuccessModal() {
             document.getElementById('successModal').classList.add('hidden');
             clearCart();
-            location.reload();
+            document.getElementById('discountInput').value = 0;
+            // ໂຫຼດໜ້າໃໝ່ເພື່ອອັບເດດສະຕັອກ
+            location.reload(); 
         }
 
-        // --- Receipt and Printing ---
+        // --- Receipt ---
         function showReceiptFromSuccess() { if(currentSale) showReceipt(currentSale, true); }
 
         function showReceipt(sale, autoPrint = false) {
-            const content = document.getElementById('receiptContent');
             const lakRate = currencies.find(c => c.code === 'LAK')?.rate || 1;
-            const totalInLak = parseFloat(sale.total) * lakRate;
-            const shopName = localStorage.getItem('shopName') || 'ร้านขายเสื้อฝ้า';
+            const shopName = localStorage.getItem('shopName') || 'ຮ້ານຂາຍເສື້ອຜ້າ';
+            const shopAddress = localStorage.getItem('shopAddress') || '';
+            const shopPhone = localStorage.getItem('shopPhone') || '';
             
-            content.innerHTML = `
-                <div class="text-center mb-2">
-                    <p class="font-bold text-sm">${shopName}</p>
-                    <p>${new Date(sale.date).toLocaleString('th-TH')}</p>
-                    <p>เลขที่: ${sale.id} | พนักงาน: ${sale.employee_name || '<?php echo $_SESSION['user_name']; ?>'}</p>
+            let itemsHtml = '';
+            sale.items.forEach(item => {
+                itemsHtml += `
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                    <span>${item.name} <br><small>x${item.quantity}</small></span>
+                    <span>${(item.price * item.quantity).toLocaleString()}</span>
+                </div>`;
+            });
+
+            const html = `
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <h2 style="font-size: 16px; font-weight: bold; margin: 0;">${shopName}</h2>
+                    <p style="font-size: 10px; margin: 0;">${shopAddress}</p>
+                    <p style="font-size: 10px; margin: 0;">Tel: ${shopPhone}</p>
                 </div>
-                <div class="border-t border-b border-dashed py-2 my-2">
-                    ${sale.items.map(item => `
-                        <div class="mb-1">
-                            <p>${item.name}</p>
-                            <p style="font-size: 9px; color: #555;">Barcode: ${item.barcode}</p>
-                            <div class="flex justify-between">
-                                <span>&nbsp;&nbsp;${item.quantity} × ${parseFloat(item.price).toLocaleString()}</span>
-                                <span>${(item.quantity * item.price).toLocaleString()}</span>
-                            </div>
-                        </div>`).join('')}
+                <div style="border-bottom: 1px dashed #000; margin-bottom: 5px;"></div>
+                <p style="font-size: 10px; margin: 2px 0;">ວັນທີ: ${new Date(sale.date).toLocaleString('lo-LA')}</p>
+                <p style="font-size: 10px; margin: 2px 0;">Bill ID: ${sale.id}</p>
+                <div style="border-bottom: 1px dashed #000; margin-bottom: 5px;"></div>
+                ${itemsHtml}
+                <div style="border-bottom: 1px dashed #000; margin: 5px 0;"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold;">
+                    <span>ລວມ:</span>
+                    <span>${parseFloat(sale.total).toLocaleString()}</span>
                 </div>
-                <div>
-                    <div class="flex justify-between"><span>รวม:</span><span>${parseFloat(sale.subtotal).toLocaleString()} บาท</span></div>
-                    ${sale.discount > 0 ? `<div class="flex justify-between"><span>ส่วนลด (${sale.discount}%):</span><span>-${(sale.subtotal * sale.discount / 100).toLocaleString()} บาท</span></div>` : ''}
-                    <div class="flex justify-between border-t border-dashed mt-1 pt-1"><span>อัตราแลกเปลี่ยน:</span><span>1 บาท = ${lakRate.toLocaleString()} กีบ</span></div>
-                    <div class="text-center font-bold text-base border-t border-dashed mt-2 pt-2">
-                        <p>ยอดชำระ: ${parseFloat(sale.total).toLocaleString()} บาท</p>
-                        <p>เท่ากับ: ${totalInLak.toLocaleString()} กีบ</p>
-                    </div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #555;">
+                    <span>(ກີບ):</span>
+                    <span>${(sale.total * lakRate).toLocaleString()}</span>
                 </div>
-                <div class="text-center mt-3 text-xs border-t border-dashed pt-2"><p>ขอบคุณที่ใช้บริการ</p></div>`;
+                <div style="text-align: center; margin-top: 15px; font-size: 10px;">
+                    <p>ຂອບໃຈທີ່ໃຊ້ບໍລິການ</p>
+                </div>
+            `;
             
+            document.getElementById('receiptContent').innerHTML = html;
             document.getElementById('receiptModal').classList.remove('hidden');
+            
             if(autoPrint) {
-                setTimeout(() => printReceipt(), 300);
+                setTimeout(printReceipt, 300);
             }
         }
-        
-        function closeReceiptModal() { document.getElementById('receiptModal').classList.add('hidden'); }
 
+        function closeReceiptModal() { document.getElementById('receiptModal').classList.add('hidden'); }
+        
         function printReceipt() {
             document.body.classList.add('printing-receipt');
             window.print();
             document.body.classList.remove('printing-receipt');
         }
 
-        // --- Shop Management ---
-        function saveShopInfo() {
-            const shopName = document.getElementById('shopName').value;
-            localStorage.setItem('shopName', shopName);
-            localStorage.setItem('shopAddress', document.getElementById('shopAddress').value);
-            localStorage.setItem('shopPhone', document.getElementById('shopPhone').value);
-            alert('บันทึกข้อมูลร้านค้าเรียบร้อยแล้ว');
-        }
-
-        function loadShopInfo() {
-            document.getElementById('shopName').value = localStorage.getItem('shopName') || 'ร้านขายเสื้อฝ้า';
-            document.getElementById('shopAddress').value = localStorage.getItem('shopAddress') || '';
-            document.getElementById('shopPhone').value = localStorage.getItem('shopPhone') || '';
-        }
-
-        // --- Sales History Page ---
+        // --- Sales History & Delete Logic ---
         function filterSales() {
             const date = document.getElementById('salesDateFilter').value;
-            fetch(`get_sales.php?date=${date}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) { throw new Error(data.error); }
-                displaySalesList(data);
-            })
-            .catch(error => { console.error('Error:', error); alert('เกิดข้อผิดพลาดในการโหลดข้อมูลการขาย'); });
+            fetch('get_sales.php?date=' + date)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('summaryTotalSales').innerText = parseFloat(data.summary?.total_sales || 0).toLocaleString();
+                    document.getElementById('summaryTotalProfit').innerText = parseFloat(data.summary?.total_profit || 0).toLocaleString();
+                    
+                    const list = document.getElementById('salesList');
+                    if(data.sales.length === 0) {
+                        list.innerHTML = '<div class="text-center p-8 text-gray-400">ບໍ່ພົບລາຍການຂາຍ</div>';
+                        return;
+                    }
+                    
+                    let html = `<table class="w-full text-sm text-left"><thead class="bg-gray-50 text-gray-500"><tr><th class="p-3">ເວລາ</th><th class="p-3">ຈຳນວນ</th><th class="p-3 text-right">ຍອດລວມ</th><th class="p-3 text-center">ຈັດການ</th></tr></thead><tbody>`;
+                    data.sales.forEach(sale => {
+                        html += `
+                        <tr class="border-b hover:bg-gray-50 transition-colors">
+                            <td class="p-3 text-gray-600">${new Date(sale.sale_date).toLocaleTimeString('lo-LA')}</td>
+                            <td class="p-3 text-gray-800 font-medium">${sale.item_count} ລາຍການ</td>
+                            <td class="p-3 text-right font-bold text-blue-600">${parseFloat(sale.total).toLocaleString()}</td>
+                            <td class="p-3 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="viewSaleDetail(${sale.id})" class="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors" title="ພິມໃບເສັດ"><i class="fas fa-print"></i></button>
+                                    <button onclick="deleteSale(${sale.id})" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="ລຶບລາຍການ"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table>';
+                    list.innerHTML = html;
+                });
+        }
+        
+        function viewSaleDetail(id) {
+            fetch('get_sale_detail.php?id=' + id)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) showReceipt(data.sale);
+                });
         }
 
-        function displaySalesList(data) {
-            const salesListContainer = document.getElementById('salesList');
-            document.getElementById('summaryTotalSales').textContent = `${parseFloat(data.summary.total_sales).toLocaleString()} บาท`;
-            document.getElementById('summaryTotalProfit').textContent = `${parseFloat(data.summary.total_profit).toLocaleString()} บาท`;
-            
-            const sales = data.sales;
-            if (sales.length === 0) {
-                salesListContainer.innerHTML = '<div class="text-center py-8 text-gray-500">ไม่พบรายการขายในวันที่เลือก</div>';
-                return;
+        function deleteSale(id) {
+            if (confirm('ຕ້ອງການລຶບລາຍການຂາຍນີ້ແທ້ບໍ່?\n\n*ລະບົບຈະຄືນຈຳນວນສິນຄ້າເຂົ້າສະຕັອກໂດຍອັດຕະໂນມັດ')) {
+                fetch('delete_sale.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        filterSales(); // Refresh sales list
+                        // ຖ້າເປັນມື້ປັດຈຸບັນ Reload Dashboard
+                        if(document.getElementById('salesDateFilter').value === new Date().toISOString().split('T')[0]) {
+                            location.reload(); 
+                        }
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່');
+                });
             }
-            
-            salesListContainer.innerHTML = `
-                <table class="w-full">
-                    <thead><tr class="border-b bg-gray-50"><th class="text-left py-3 px-4">เวลา</th><th class="text-left py-3 px-4">รายการ</th><th class="text-right py-3 px-4">ยอดรวม</th><th class="text-right py-3 px-4">ส่วนลด</th><th class="text-right py-3 px-4">ยอดชำระ</th><th class="text-right py-3 px-4">กำไร</th><th class="text-center py-3 px-4">จัดการ</th></tr></thead>
-                    <tbody>
-                        ${sales.map(sale => `
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="py-3 px-4">${new Date(sale.sale_date).toLocaleTimeString('th-TH')}</td>
-                                <td class="py-3 px-4">${sale.item_count} รายการ</td>
-                                <td class="py-3 px-4 text-right">${parseFloat(sale.subtotal).toLocaleString()} บาท</td>
-                                <td class="py-3 px-4 text-right">${sale.discount}%</td>
-                                <td class="py-3 px-4 text-right font-bold">${parseFloat(sale.total).toLocaleString()} บาท</td>
-                                <td class="py-3 px-4 text-right text-green-600">${parseFloat(sale.profit).toLocaleString()} บาท</td>
-                                <td class="py-3 px-4 text-center">
-                                    <button onclick="viewSaleDetail(${sale.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"><i class="fas fa-eye mr-1"></i>ดู</button>
-                                    <button onclick="printSaleReceipt(${sale.id})" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 ml-1"><i class="fas fa-print mr-1"></i>พิมพ์</button>
-                                </td>
-                            </tr>`).join('')}
-                    </tbody>
-                </table>`;
         }
 
-        function viewSaleDetail(saleId) {
-            fetch(`get_sale_detail.php?id=${saleId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) { showReceipt(data.sale, false); } 
-                else { alert('ไม่พบข้อมูลการขาย'); }
-            })
-            .catch(error => { console.error('Error:', error); alert('เกิดข้อผิดพลาดในการโหลดข้อมูล'); });
+        // --- Shop Info ---
+        function saveShopInfo() {
+            localStorage.setItem('shopName', document.getElementById('shopName').value);
+            localStorage.setItem('shopAddress', document.getElementById('shopAddress').value);
+            localStorage.setItem('shopPhone', document.getElementById('shopPhone').value);
+            alert('ບັນທຶກສຳເລັດ!');
         }
-
-        function printSaleReceipt(saleId) {
-            fetch(`get_sale_detail.php?id=${saleId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) { showReceipt(data.sale, true); } 
-                else { alert('ไม่พบข้อมูลการขาย'); }
-            })
-            .catch(error => { console.error('Error:', error); alert('เกิดข้อผิดพลาดในการโหลดข้อมูล'); });
-        }
-
-        // --- Initialize ---
-        document.addEventListener('DOMContentLoaded', function() {
-            loadShopInfo();
-            showPage('dashboard');
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('shopName').value = localStorage.getItem('shopName') || '';
+            document.getElementById('shopAddress').value = localStorage.getItem('shopAddress') || '';
+            document.getElementById('shopPhone').value = localStorage.getItem('shopPhone') || '';
         });
     </script>
 </body>
