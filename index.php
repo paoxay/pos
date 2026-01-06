@@ -39,48 +39,98 @@ $currencies = $stmt->fetchAll();
     <title>ລະບົບຂາຍເສື້ອຜ້າ POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
+ <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Lao:wght@400;700&display=swap');
+    
+    body { 
+        font-family: 'Sarabun', 'Noto Sans Lao', sans-serif; 
+        background-color: #f3f4f6; 
+    }
+    
+    /* Smooth Transition Animations */
+    .fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Active Menu Style */
+    .nav-item.active {
+        background: linear-gradient(to right, #eff6ff, #ffffff);
+        border-right: 4px solid #2563eb;
+        color: #2563eb;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* =========================================
+       PRINT STYLES (Optimized for 80mm Thermal Printer)
+       ========================================= */
+    @media print {
+        /* ຊ່ອນທຸກຢ່າງໃນໜ້າເວັບ */
+        body * {
+            visibility: hidden;
+        }
         
-        /* Smooth Transition Animations */
-        .fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* ສະແດງສະເພາະ Modal ໃບເສັດ */
+        #receiptModal, #receiptModal * {
+            visibility: visible;
         }
 
-        /* Active Menu Style */
-        .nav-item.active {
-            background: linear-gradient(to right, #eff6ff, #ffffff);
-            border-right: 4px solid #2563eb;
-            color: #2563eb;
+        #receiptModal {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: white !important;
+            box-shadow: none !important;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        /* Print Styles (80mm Support) */
-        @media print {
-            body:not(.printing-receipt) * { display: none; }
-            body.printing-receipt > *:not(#receiptModal) { display: none !important; }
-            body.printing-receipt #receiptModal { 
-                display: block !important; 
-                position: static !important; 
-                width: 100%; 
-                height: auto; 
-                overflow: visible !important; 
-                box-shadow: none !important;
-                background: white !important;
-            }
-            body.printing-receipt #receiptModal .no-print-in-modal { display: none !important; }
-            .receipt-print { width: 80mm !important; max-width: 80mm !important; border: none !important; padding: 0 !important; margin: 0 !important; font-size: 10px !important; }
-            @page { size: auto; margin: 0; }
+        /* ຊ່ອນປຸ່ມກົດຕ່າງໆໃນ Modal (ປຸ່ມພິມ, ປຸ່ມປິດ) */
+        #receiptModal button, .no-print-in-modal, .flex.gap-2 {
+            display: none !important;
         }
-    </style>
+
+        /* ປັບແຕ່ງເນື້ອຫາໃບເສັດໃຫ້ພໍດີ ແລະ ຊັດເຈນ */
+        .receipt-print {
+            width: 72mm !important; /* ໃຊ້ 72mm ເພື່ອເຫຼືອຂອບໜ້ອຍໜຶ່ງບໍ່ໃຫ້ຕົກຂອບເຈ້ຍ 80mm */
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            
+            /* ຕັ້ງຄ່າຟອນໃຫ້ເຂັ້ມ ແລະ ໃຫຍ່ຂຶ້ນ */
+            font-family: 'Noto Sans Lao', sans-serif !important; 
+            font-size: 14px !important; /* ຂະໜາດໂຕໜັງສື */
+            font-weight: bold !important; /* ໂຕເຂັ້ມ */
+            color: #000000 !important; /* ສີດຳສະນິດ */
+            line-height: 1.2 !important;
+        }
+
+        /* ປັບເສັ້ນຂີດໃຫ້ໜາຂຶ້ນ */
+        .border-dashed {
+            border-style: dashed !important;
+            border-width: 1.5px !important; 
+            border-color: #000 !important;
+        }
+        
+        /* ປັບໄລຍະຫ່າງຂອງແຕ່ລະແຖວໃນບິນ */
+        .receipt-print div {
+            margin-bottom: 2px !important;
+        }
+
+        /* ຕັ້ງຄ່າໜ້າເຈ້ຍ */
+        @page {
+            size: 80mm auto; /* ກຳນົດຂະໜາດເຈ້ຍ */
+            margin: 0mm;     /* ຕັດຂອບຂາວອອກໃຫ້ໝົດ */
+        }
+    }
+</style>
 </head>
 <body class="bg-gray-50 h-screen flex overflow-hidden">
 
