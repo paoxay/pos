@@ -6,24 +6,46 @@ $success = '';
 $error = '';
 $edit_product = null;
 $search = $_GET['search'] ?? ''; // ຮັບຄ່າຄົ້ນຫາ
+$sort = $_GET['sort'] ?? 'name'; // ຮັບຄ່າການຈັດລຽງ (Default: ຕາມຊື່)
 
 if ($_POST) {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'add':
+                // ແກ້ໄຂ: ແປງບາໂຄດເປັນຕົວພິມໃຫຍ່ ແລະ ຕັດຍະຫວ່າງ
+                $barcode = strtoupper(trim($_POST['barcode']));
+                
                 $stmt = $pdo->prepare("INSERT INTO products (barcode, name, stock, cost, price) VALUES (?, ?, ?, ?, ?)");
                 try {
-                    $stmt->execute([$_POST['barcode'], $_POST['name'], $_POST['stock'], $_POST['cost'], $_POST['price']]);
+                    $stmt->execute([$barcode, $_POST['name'], $_POST['stock'], $_POST['cost'], $_POST['price']]);
                     $success = "ເພີ່ມສິນຄ້າສຳເລັດ!";
                 } catch (PDOException $e) {
-                    $error = "ຜິດພາດ: ບາໂຄດຊ້ຳກັນ ຫຼື ຂໍ້ມູນບໍ່ຖືກຕ້ອງ";
+                    // ກວດສອບ Error Code 23000 (Duplicate entry)
+                    if ($e->getCode() == 23000) {
+                        $error = "ຜິດພາດ: ບາໂຄດ '$barcode' ມີໃນລະບົບແລ້ວ! ກະລຸນາໃຊ້ລະຫັດອື່ນ.";
+                    } else {
+                        $error = "ຜິດພາດ: ຂໍ້ມູນບໍ່ຖືກຕ້ອງ ຫຼື ເກີດຂໍ້ຜິດພາດໃນລະບົບ";
+                    }
                 }
                 break;
+                
             case 'edit':
+                // ແກ້ໄຂ: ແປງບາໂຄດເປັນຕົວພິມໃຫຍ່ເຊັ່ນກັນ
+                $barcode = strtoupper(trim($_POST['barcode']));
+                
                 $stmt = $pdo->prepare("UPDATE products SET barcode = ?, name = ?, stock = ?, cost = ?, price = ? WHERE id = ?");
-                $stmt->execute([$_POST['barcode'], $_POST['name'], $_POST['stock'], $_POST['cost'], $_POST['price'], $_POST['id']]);
-                $success = "ແກ້ໄຂສິນຄ້າສຳເລັດ!";
+                try {
+                    $stmt->execute([$barcode, $_POST['name'], $_POST['stock'], $_POST['cost'], $_POST['price'], $_POST['id']]);
+                    $success = "ແກ້ໄຂສິນຄ້າສຳເລັດ!";
+                } catch (PDOException $e) {
+                    if ($e->getCode() == 23000) {
+                        $error = "ຜິດພາດ: ບາໂຄດ '$barcode' ໄປຊ້ຳກັບສິນຄ້າອື່ນ!";
+                    } else {
+                        $error = "ຜິດພາດ: " . $e->getMessage();
+                    }
+                }
                 break;
+                
             case 'delete':
                 if ($_SESSION['user_role'] === 'admin') {
                     $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
@@ -37,7 +59,7 @@ if ($_POST) {
     }
 }
 
-// ດຶງຂໍ້ມູນສິນຄ້າ (ພ້ອມລະບົບຄົ້ນຫາ)
+// ດຶງຂໍ້ມູນສິນຄ້າ (ພ້ອມລະບົບຄົ້ນຫາ ແລະ ຈັດລຽງ)
 $sql = "SELECT * FROM products";
 $params = [];
 
@@ -47,7 +69,13 @@ if ($search) {
     $params[] = "%$search%";
 }
 
-$sql .= " ORDER BY name";
+// ເພີ່ມເງື່ອນໄຂການຈັດລຽງ
+if ($sort == 'newest') {
+    $sql .= " ORDER BY id DESC"; // ລຽງຕາມ ID ລ່າສຸດ (ຫຼື created_at)
+} else {
+    $sql .= " ORDER BY name ASC"; // ລຽງຕາມຊື່
+}
+
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $products = $stmt->fetchAll();
@@ -116,7 +144,8 @@ if (isset($_GET['edit'])) {
                         
                         <div>
                             <label class="text-sm font-medium text-gray-700">ບາໂຄດ</label>
-                            <input type="text" name="barcode" value="<?php echo $edit_product['barcode'] ?? ''; ?>" class="w-full mt-1 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required placeholder="ລະຫັດສິນຄ້າ">
+                            <input type="text" name="barcode" value="<?php echo $edit_product['barcode'] ?? ''; ?>" class="w-full mt-1 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none uppercase" required placeholder="ລະຫັດສິນຄ້າ (A123...)">
+                            <p class="text-xs text-gray-400 mt-1">* ລະບົບຈະປ່ຽນເປັນຕົວພິມໃຫຍ່ອັດຕະໂນມັດ</p>
                         </div>
                         <div>
                             <label class="text-sm font-medium text-gray-700">ຊື່ສິນຄ້າ</label>
@@ -152,6 +181,7 @@ if (isset($_GET['edit'])) {
             <div class="lg:col-span-8">
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
                     <form method="GET" class="flex gap-2">
+                        <input type="hidden" name="sort" value="<?php echo $sort; ?>">
                         <div class="relative flex-1">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                                 <i class="fas fa-search"></i>
@@ -164,11 +194,22 @@ if (isset($_GET['edit'])) {
                             ຄົ້ນຫາ
                         </button>
                         <?php if($search): ?>
-                            <a href="products.php" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                            <a href="products.php?sort=<?php echo $sort; ?>" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
                                 <i class="fas fa-times"></i>
                             </a>
                         <?php endif; ?>
                     </form>
+
+                    <div class="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                        <a href="products.php?sort=name<?php echo $search ? '&search='.urlencode($search) : ''; ?>" 
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center <?php echo $sort!='newest' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'; ?>">
+                            <i class="fas fa-sort-alpha-down mr-2"></i> ລຽງຕາມຊື່ (ກ-ຮ)
+                        </a>
+                        <a href="products.php?sort=newest<?php echo $search ? '&search='.urlencode($search) : ''; ?>" 
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center <?php echo $sort=='newest' ? 'bg-purple-600 text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'; ?>">
+                            <i class="fas fa-clock mr-2"></i> ✨ ມາໃໝ່ລ່າສຸດ
+                        </a>
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -177,6 +218,9 @@ if (isset($_GET['edit'])) {
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">ສິນຄ້າ</th>
+                                    <?php if($sort == 'newest'): ?>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">ວັນທີເພີ່ມ</th>
+                                    <?php endif; ?>
                                     <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">ສະຕັອກ</th>
                                     <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">ຕົ້ນທຶນ</th>
                                     <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">ລາຄາຂາຍ</th>
@@ -186,7 +230,7 @@ if (isset($_GET['edit'])) {
                             <tbody class="divide-y divide-gray-100">
                                 <?php if (count($products) == 0): ?>
                                     <tr>
-                                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                                        <td colspan="<?php echo $sort == 'newest' ? '6' : '5'; ?>" class="px-6 py-8 text-center text-gray-500">
                                             ບໍ່ພົບສິນຄ້າທີ່ຄົ້ນຫາ
                                         </td>
                                     </tr>
@@ -196,8 +240,22 @@ if (isset($_GET['edit'])) {
                                 <tr class="hover:bg-blue-50/50 transition-colors group">
                                     <td class="px-6 py-4">
                                         <div class="font-medium text-gray-900"><?php echo $p['name']; ?></div>
-                                        <div class="text-xs text-gray-400 font-mono"><?php echo $p['barcode']; ?></div>
+                                        <div class="text-xs text-gray-400 font-mono bg-gray-100 inline-block px-1 rounded"><?php echo $p['barcode']; ?></div>
                                     </td>
+                                    
+                                    <?php if($sort == 'newest'): ?>
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="inline-block text-left">
+                                            <div class="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded border border-purple-100">
+                                                📅 <?php echo date('d/m/y', strtotime($p['created_at'])); ?>
+                                            </div>
+                                            <div class="text-[10px] text-gray-400 mt-1 text-center">
+                                                ⏰ <?php echo date('H:i', strtotime($p['created_at'])); ?>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <?php endif; ?>
+
                                     <td class="px-6 py-4 text-center">
                                         <span class="px-3 py-1 rounded-full text-xs font-bold <?php echo $p['stock'] < 10 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'; ?>">
                                             <?php echo number_format($p['stock']); ?>
@@ -207,7 +265,7 @@ if (isset($_GET['edit'])) {
                                     <td class="px-6 py-4 text-right font-bold text-gray-700 text-sm"><?php echo number_format($p['price']); ?></td>
                                     <td class="px-6 py-4 text-center">
                                         <div class="flex justify-center gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <a href="?edit=<?php echo $p['id']; ?>&search=<?php echo urlencode($search); ?>" class="w-8 h-8 flex items-center justify-center rounded-lg bg-yellow-100 text-yellow-600 hover:bg-yellow-200">
+                                            <a href="?edit=<?php echo $p['id']; ?>&search=<?php echo urlencode($search); ?>&sort=<?php echo $sort; ?>" class="w-8 h-8 flex items-center justify-center rounded-lg bg-yellow-100 text-yellow-600 hover:bg-yellow-200">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <form method="POST" onsubmit="return confirm('ຕ້ອງການລຶບແທ້ບໍ່?');">
@@ -228,5 +286,22 @@ if (isset($_GET['edit'])) {
             </div>
         </div>
     </div>
+    <?php if ($error): ?>
+<script>
+    // ສ້າງສຽງແຈ້ງເຕືອນ
+    const audioErr = new Audio('https://www.soundjay.com/buttons/sounds/button-10.mp3');
+    
+    // ຫຼິ້ນສຽງທັນທີທີ່ໜ້າເວັບໂຫຼດ
+    window.onload = function() {
+        audioErr.play().catch(function(error) {
+            // Browser ບາງອັນອາດຈະບລັອກສຽງຖ້າບໍ່ມີການຄິກກ່ອນ
+            console.log("Audio play failed: " + error);
+        });
+    };
+</script>
+<?php endif; ?>
+
+</body>
+</html>
 </body>
 </html>

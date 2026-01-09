@@ -505,6 +505,8 @@ $currencies = $stmt->fetchAll();
     </div>
 
     <script>
+        // ປະກາດສຽງແຈ້ງເຕືອນ (ໄວ້ເທິງສຸດເລີຍ) 🔊
+    const soundError = new Audio('sound/new-notification-010-352755.mp3');
         let cart = [];
         const products = <?php echo json_encode($products); ?>;
         const currencies = <?php echo json_encode($currencies); ?>;
@@ -540,13 +542,16 @@ $currencies = $stmt->fetchAll();
         document.getElementById('barcodeInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                const barcode = this.value.trim();
-                const product = products.find(p => p.barcode === barcode);
+                const barcode = this.value.trim().toUpperCase();
+                const product = products.find(p => p.barcode.trim().toUpperCase() === barcode);
                 if (product) {
                     addProductToCart(product);
                     this.value = '';
                 } else {
+                    soundError.currentTime = 0; // ຣີເຊັດສຽງ
+                    soundError.play();          // 🔊 ຫຼິ້ນສຽງ
                     alert('ບໍ່ພົບສິນຄ້ານີ້!');
+                    this.value = ''; // ລ້າງຊ່ອງປ້ອນຂໍ້ມູນ
                 }
             }
         });
@@ -570,7 +575,12 @@ $currencies = $stmt->fetchAll();
             const qty = parseInt(qtyInput.value);
             
             // Check Stock
-            if (qty > product.stock) return alert(`ສິນຄ້າເຫຼືອພຽງ ${product.stock} ອັນ`);
+            // Check Stock
+    if (qty > product.stock) {
+        soundError.currentTime = 0;
+        soundError.play(); // 🔊 ຫຼິ້ນສຽງ
+        return alert(`ສິນຄ້າເຫຼືອພຽງ ${product.stock} ອັນ`); // ແຈ້ງເຕືອນ
+    }
 
             const existingItem = cart.find(item => item.id == product.id);
             if (existingItem) {
@@ -987,5 +997,6 @@ $currencies = $stmt->fetchAll();
             }
         });
     </script>
+    
 </body>
 </html>
