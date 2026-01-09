@@ -71,64 +71,21 @@ $currencies = $stmt->fetchAll();
        PRINT STYLES (Optimized for 80mm Thermal Printer)
        ========================================= */
     @media print {
-        /* ຊ່ອນທຸກຢ່າງໃນໜ້າເວັບ */
-        body * {
-            visibility: hidden;
-        }
-        
-        /* ສະແດງສະເພາະ Modal ໃບເສັດ */
-        #receiptModal, #receiptModal * {
-            visibility: visible;
-        }
-
+        body * { visibility: hidden; }
+        #receiptModal, #receiptModal * { visibility: visible; }
         #receiptModal {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-            background: white !important;
-            box-shadow: none !important;
+            position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0;
+            background: white !important; box-shadow: none !important;
         }
-
-        /* ຊ່ອນປຸ່ມກົດຕ່າງໆໃນ Modal (ປຸ່ມພິມ, ປຸ່ມປິດ) */
-        #receiptModal button, .no-print-in-modal, .flex.gap-2 {
-            display: none !important;
-        }
-
-        /* ປັບແຕ່ງເນື້ອຫາໃບເສັດໃຫ້ພໍດີ ແລະ ຊັດເຈນ */
+        #receiptModal button, .no-print-in-modal, .flex.gap-2 { display: none !important; }
         .receipt-print {
-            width: 72mm !important; /* ໃຊ້ 72mm ເພື່ອເຫຼືອຂອບໜ້ອຍໜຶ່ງບໍ່ໃຫ້ຕົກຂອບເຈ້ຍ 80mm */
-            max-width: 100% !important;
-            padding: 0 !important;
-            margin: 0 auto !important;
-            
-            /* ຕັ້ງຄ່າຟອນໃຫ້ເຂັ້ມ ແລະ ໃຫຍ່ຂຶ້ນ */
-            font-family: 'Noto Sans Lao', sans-serif !important; 
-            font-size: 14px !important; /* ຂະໜາດໂຕໜັງສື */
-            font-weight: bold !important; /* ໂຕເຂັ້ມ */
-            color: #000000 !important; /* ສີດຳສະນິດ */
-            line-height: 1.2 !important;
+            width: 72mm !important; max-width: 100% !important; padding: 0 !important; margin: 0 auto !important;
+            font-family: 'Noto Sans Lao', sans-serif !important; font-size: 14px !important;
+            font-weight: bold !important; color: #000000 !important; line-height: 1.2 !important;
         }
-
-        /* ປັບເສັ້ນຂີດໃຫ້ໜາຂຶ້ນ */
-        .border-dashed {
-            border-style: dashed !important;
-            border-width: 1.5px !important; 
-            border-color: #000 !important;
-        }
-        
-        /* ປັບໄລຍະຫ່າງຂອງແຕ່ລະແຖວໃນບິນ */
-        .receipt-print div {
-            margin-bottom: 2px !important;
-        }
-
-        /* ຕັ້ງຄ່າໜ້າເຈ້ຍ */
-        @page {
-            size: 80mm auto; /* ກຳນົດຂະໜາດເຈ້ຍ */
-            margin: 0mm;     /* ຕັດຂອບຂາວອອກໃຫ້ໝົດ */
-        }
+        .border-dashed { border-style: dashed !important; border-width: 1.5px !important; border-color: #000 !important; }
+        .receipt-print div { margin-bottom: 2px !important; }
+        @page { size: 80mm auto; margin: 0mm; }
     }
 </style>
 </head>
@@ -394,6 +351,11 @@ $currencies = $stmt->fetchAll();
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
+                    
+                    <div class="flex-1 max-w-xs ml-4">
+                        <input type="text" id="salesSearchInput" onkeyup="searchSalesTable()" placeholder="ຄົ້ນຫາ ບາໂຄດ..." class="w-full p-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500">
+                    </div>
+
                     <div class="flex gap-4">
                         <div class="text-right">
                             <p class="text-xs text-gray-500">ຍອດຂາຍລວມ</p>
@@ -426,6 +388,16 @@ $currencies = $stmt->fetchAll();
                         <label class="block text-sm font-medium text-gray-700 mb-2">ເບີໂທລະສັບ</label>
                         <input type="text" id="shopPhone" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">QR Code ຮັບເງິນ (ສະແດງທ້າຍບິນ)</label>
+                        <div class="flex items-center gap-4">
+                            <input type="file" id="shopQRInput" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <img id="shopQRPreview" src="" class="h-16 w-16 object-contain border rounded hidden">
+                        </div>
+                        <button type="button" onclick="removeQRCode()" class="text-xs text-red-500 mt-1 hover:underline">ລົບຮູບ QR</button>
+                    </div>
+
                     <button type="button" onclick="saveShopInfo()" class="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 font-medium shadow-lg shadow-blue-500/30">
                         <i class="fas fa-save mr-2"></i> ບັນທຶກຂໍ້ມູນ
                     </button>
@@ -490,6 +462,44 @@ $currencies = $stmt->fetchAll();
             <div class="flex gap-3">
                 <button onclick="showReceiptFromSuccess()" class="flex-1 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl font-medium">ພິມໃບເສັດ</button>
                 <button onclick="closeSuccessModal()" class="flex-1 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium">ປິດ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminDetailModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
+            <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
+                <h3 class="font-bold text-gray-800"><i class="fas fa-info-circle text-blue-600 mr-2"></i>ລາຍລະອຽດການຂາຍ (Admin)</h3>
+                <button onclick="document.getElementById('adminDetailModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                    <div><span class="text-gray-500">ເລກບິນ:</span> <span id="ad_saleId" class="font-bold"></span></div>
+                    <div><span class="text-gray-500">ວັນທີ:</span> <span id="ad_saleDate" class="font-bold"></span></div>
+                    <div><span class="text-gray-500">ພະນັກງານ:</span> <span id="ad_saleEmp" class="font-bold"></span></div>
+                </div>
+                
+                <table class="w-full text-sm text-left mb-4">
+                    <thead class="bg-gray-100 text-gray-600">
+                        <tr>
+                            <th class="p-2">ສິນຄ້າ/ບາໂຄດ</th>
+                            <th class="p-2 text-center">ຈຳນວນ</th>
+                            <th class="p-2 text-right">ຕົ້ນທຶນ</th>
+                            <th class="p-2 text-right">ຂາຍ</th>
+                            <th class="p-2 text-right text-green-600">ກຳໄລ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ad_itemList" class="divide-y divide-gray-100"></tbody>
+                    <tfoot class="bg-gray-50 font-bold">
+                        <tr>
+                            <td colspan="4" class="p-2 text-right">ກຳໄລລວມ:</td>
+                            <td class="p-2 text-right text-green-600" id="ad_totalProfit">0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="p-4 border-t bg-gray-50 text-right">
+                <button onclick="document.getElementById('adminDetailModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">ປິດ</button>
             </div>
         </div>
     </div>
@@ -735,6 +745,7 @@ $currencies = $stmt->fetchAll();
             const shopName = localStorage.getItem('shopName') || 'ຮ້ານຂາຍເສື້ອຜ້າ';
             const shopAddress = localStorage.getItem('shopAddress') || '';
             const shopPhone = localStorage.getItem('shopPhone') || '';
+            const qrCodeData = localStorage.getItem('shopQRCode'); // ດຶງຮູບ QR
             
             let itemsHtml = '';
             sale.items.forEach(item => {
@@ -744,6 +755,16 @@ $currencies = $stmt->fetchAll();
                     <span>${(item.price * item.quantity).toLocaleString()}</span>
                 </div>`;
             });
+
+            // ສ້າງ HTML ສຳລັບ QR Code (ຖ້າມີ)
+            let qrHtml = '';
+            if (qrCodeData) {
+                qrHtml = `
+                <div style="text-align: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #000;">
+                    <p style="font-size: 10px; margin-bottom: 5px;">ສະແກນຈ່າຍເງິນ:</p>
+                    <img src="${qrCodeData}" style="width: 100px; height: 100px; display: inline-block;">
+                </div>`;
+            }
 
             const html = `
                 <div style="text-align: center; margin-bottom: 10px;">
@@ -765,6 +786,7 @@ $currencies = $stmt->fetchAll();
                     <span>(ກີບ):</span>
                     <span>${(sale.total * lakRate).toLocaleString()}</span>
                 </div>
+                ${qrHtml}
                 <div style="text-align: center; margin-top: 15px; font-size: 10px;">
                     <p>ຂອບໃຈທີ່ໃຊ້ບໍລິການ</p>
                 </div>
@@ -801,17 +823,35 @@ $currencies = $stmt->fetchAll();
                         return;
                     }
                     
-                    let html = `<table class="w-full text-sm text-left"><thead class="bg-gray-50 text-gray-500"><tr><th class="p-3">ເວລາ</th><th class="p-3">ຈຳນວນ</th><th class="p-3 text-right">ຍອດລວມ</th><th class="p-3 text-center">ຈັດການ</th></tr></thead><tbody>`;
+                    let html = `<table class="w-full text-sm text-left">
+                        <thead class="bg-gray-50 text-gray-500">
+                            <tr>
+                                <th class="p-3">ເວລາ</th>
+                                <th class="p-3">ບາໂຄດສິນຄ້າ</th>
+                                <th class="p-3 text-center">ຈຳນວນ</th>
+                                <th class="p-3 text-right">ຍອດລວມ</th>
+                                <th class="p-3 text-center">ຈັດການ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">`;
+                    
                     data.sales.forEach(sale => {
+                        let barcodes = sale.barcodes || '-';
+                        let displayBarcodes = barcodes.length > 30 ? barcodes.substring(0, 30) + '...' : barcodes;
+
                         html += `
-                        <tr class="border-b hover:bg-gray-50 transition-colors">
-                            <td class="p-3 text-gray-600">${new Date(sale.sale_date).toLocaleTimeString('lo-LA')}</td>
-                            <td class="p-3 text-gray-800 font-medium">${sale.item_count} ລາຍການ</td>
+                        <tr class="hover:bg-gray-50 transition-colors sales-row" data-search="${barcodes.toLowerCase()} ${sale.id}">
+                            <td class="p-3 text-gray-600 whitespace-nowrap">${new Date(sale.sale_date).toLocaleTimeString('lo-LA')}</td>
+                            <td class="p-3 text-gray-500 font-mono text-xs" title="${barcodes}">
+                                <i class="fas fa-barcode mr-1"></i>${displayBarcodes}
+                            </td>
+                            <td class="p-3 text-center text-gray-800 font-medium">${sale.item_count} ລາຍການ</td>
                             <td class="p-3 text-right font-bold text-blue-600">${parseFloat(sale.total).toLocaleString()}</td>
-                            <td class="p-3 text-center">
+                            <td class="p-3 text-center whitespace-nowrap">
                                 <div class="flex items-center justify-center gap-2">
-                                    <button onclick="viewSaleDetail(${sale.id})" class="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors" title="ພິມໃບເສັດ"><i class="fas fa-print"></i></button>
-                                    <button onclick="deleteSale(${sale.id})" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="ລຶບລາຍການ"><i class="fas fa-trash-alt"></i></button>
+                                    <button onclick="viewSaleDetail(${sale.id})" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="ພິມໃບເສັດ"><i class="fas fa-print"></i></button>
+                                    <button onclick="viewAdminDetail(${sale.id})" class="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg" title="ເບິ່ງຕົ້ນທຶນ/ກຳໄລ"><i class="fas fa-eye"></i></button>
+                                    <button onclick="deleteSale(${sale.id})" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="ລຶບລາຍການ"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                             </td>
                         </tr>`;
@@ -821,11 +861,58 @@ $currencies = $stmt->fetchAll();
                 });
         }
         
+        function searchSalesTable() {
+            const input = document.getElementById('salesSearchInput');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('.sales-row');
+
+            rows.forEach(row => {
+                const text = row.getAttribute('data-search');
+                if (text.includes(filter)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
         function viewSaleDetail(id) {
             fetch('get_sale_detail.php?id=' + id)
                 .then(res => res.json())
                 .then(data => {
                     if(data.success) showReceipt(data.sale);
+                });
+        }
+
+        function viewAdminDetail(id) {
+            fetch('get_sale_detail.php?id=' + id)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        const s = data.sale;
+                        document.getElementById('ad_saleId').innerText = s.id;
+                        document.getElementById('ad_saleDate').innerText = new Date(s.date).toLocaleString('lo-LA');
+                        document.getElementById('ad_saleEmp').innerText = s.employee_name;
+                        document.getElementById('ad_totalProfit').innerText = parseFloat(s.profit).toLocaleString();
+
+                        let html = '';
+                        s.items.forEach(item => {
+                            const itemProfit = (item.price - item.cost) * item.quantity;
+                            html += `
+                            <tr>
+                                <td class="p-2 border-b">
+                                    <div class="font-bold">${item.name}</div>
+                                    <div class="text-xs text-gray-400">${item.barcode}</div>
+                                </td>
+                                <td class="p-2 border-b text-center">${item.quantity}</td>
+                                <td class="p-2 border-b text-right text-gray-500">${parseFloat(item.cost).toLocaleString()}</td>
+                                <td class="p-2 border-b text-right">${parseFloat(item.price).toLocaleString()}</td>
+                                <td class="p-2 border-b text-right font-bold text-green-600">+${itemProfit.toLocaleString()}</td>
+                            </tr>`;
+                        });
+                        document.getElementById('ad_itemList').innerHTML = html;
+                        document.getElementById('adminDetailModal').classList.remove('hidden');
+                    }
                 });
         }
 
@@ -861,7 +948,28 @@ $currencies = $stmt->fetchAll();
             localStorage.setItem('shopName', document.getElementById('shopName').value);
             localStorage.setItem('shopAddress', document.getElementById('shopAddress').value);
             localStorage.setItem('shopPhone', document.getElementById('shopPhone').value);
-            alert('ບັນທຶກສຳເລັດ!');
+
+            const fileInput = document.getElementById('shopQRInput');
+            if (fileInput.files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    localStorage.setItem('shopQRCode', e.target.result);
+                    document.getElementById('shopQRPreview').src = e.target.result;
+                    document.getElementById('shopQRPreview').classList.remove('hidden');
+                    alert('ບັນທຶກຂໍ້ມູນ ແລະ ຮູບ QR Code ສຳເລັດ!');
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                alert('ບັນທຶກສຳເລັດ!');
+            }
+        }
+
+        function removeQRCode() {
+            localStorage.removeItem('shopQRCode');
+            document.getElementById('shopQRInput').value = '';
+            document.getElementById('shopQRPreview').src = '';
+            document.getElementById('shopQRPreview').classList.add('hidden');
+            alert('ລົບຮູບ QR Code ແລ້ວ');
         }
         
         // Init
@@ -869,6 +977,14 @@ $currencies = $stmt->fetchAll();
             document.getElementById('shopName').value = localStorage.getItem('shopName') || '';
             document.getElementById('shopAddress').value = localStorage.getItem('shopAddress') || '';
             document.getElementById('shopPhone').value = localStorage.getItem('shopPhone') || '';
+            
+            // Load QR Preview
+            const qrData = localStorage.getItem('shopQRCode');
+            if(qrData && document.getElementById('shopQRPreview')) {
+                const img = document.getElementById('shopQRPreview');
+                img.src = qrData;
+                img.classList.remove('hidden');
+            }
         });
     </script>
 </body>
