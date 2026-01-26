@@ -4,7 +4,8 @@ require_once 'config.php';
 checkLogin();
 
 try {
-    $date = $_GET['date'] ?? date('Y-m-d');
+    $start_date = $_GET['start_date'] ?? date('Y-m-d');
+    $end_date = $_GET['end_date'] ?? date('Y-m-d');
     
     // 1. ດຶງຂໍ້ມູນສະຫຼຸບຍອດຂາຍ
     $summary_stmt = $pdo->prepare("
@@ -12,12 +13,12 @@ try {
             SUM(total) as total_sales,
             SUM(profit) as total_profit
         FROM sales
-        WHERE DATE(sale_date) = ?
+        WHERE DATE(sale_date) BETWEEN ? AND ?
     ");
-    $summary_stmt->execute([$date]);
+    $summary_stmt->execute([$start_date, $end_date]);
     $summary = $summary_stmt->fetch(PDO::FETCH_ASSOC);
 
-    // 2. ດຶງລາຍການຂາຍ (ແກ້ໄຂ: ເພີ່ມ Subquery ດຶງ Barcode)
+    // 2. ດຶງລາຍການຂາຍ
     $sales_stmt = $pdo->prepare("
         SELECT 
             s.id, 
@@ -32,12 +33,21 @@ try {
              JOIN products p ON si.product_id = p.id 
              WHERE si.sale_id = s.id) as barcodes
         FROM sales s
-        WHERE DATE(s.sale_date) = ?
+        WHERE DATE(s.sale_date) BETWEEN ? AND ?
         ORDER BY s.sale_date DESC
     ");
     
-    $sales_stmt->execute([$date]);
+    $sales_stmt->execute([$start_date, $end_date]);
     $sales = $sales_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // *** ເພີ່ມສ່ວນກວດສອບສິດ (Security Check) ***
+    if ($_SESSION['user_role'] !== 'admin') {
+        // ຖ້າບໍ່ແມ່ນ admin ໃຫ້ປິດບັງກຳໄລ
+        $summary['total_profit'] = 0;
+        foreach ($sales as &$sale) {
+            unset($sale['profit']); // ລຶບ key profit ອອກຈາກ array
+        }
+    }
     
     $response = [
         'summary' => [

@@ -35,63 +35,70 @@ $currencies = $stmt->fetchAll();
 <html lang="lo">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ລະບົບຂາຍເສື້ອຜ້າ POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
- <style>
-    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Lao:wght@400;700&display=swap');
-    
-    body { 
-        font-family: 'Sarabun', 'Noto Sans Lao', sans-serif; 
-        background-color: #f3f4f6; 
-    }
-    
-    /* Smooth Transition Animations */
-    .fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(15px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Active Menu Style */
-    .nav-item.active {
-        background: linear-gradient(to right, #eff6ff, #ffffff);
-        border-right: 4px solid #2563eb;
-        color: #2563eb;
-    }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f1f1; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-    /* =========================================
-       PRINT STYLES (Optimized for 80mm Thermal Printer)
-       ========================================= */
-    @media print {
-        body * { visibility: hidden; }
-        #receiptModal, #receiptModal * { visibility: visible; }
-        #receiptModal {
-            position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0;
-            background: white !important; box-shadow: none !important;
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Lao:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Sarabun', 'Noto Sans Lao', sans-serif; 
+            background-color: #f3f4f6; 
+            padding-bottom: 80px; /* ເພີ່ມພື້ນທີ່ໃຫ້ເມນູມືຖື */
         }
-        #receiptModal button, .no-print-in-modal, .flex.gap-2 { display: none !important; }
-        .receipt-print {
-            width: 72mm !important; max-width: 100% !important; padding: 0 !important; margin: 0 auto !important;
-            font-family: 'Noto Sans Lao', sans-serif !important; font-size: 14px !important;
-            font-weight: bold !important; color: #000000 !important; line-height: 1.2 !important;
+        @media (min-width: 768px) {
+            body { padding-bottom: 0; }
         }
-        .border-dashed { border-style: dashed !important; border-width: 1.5px !important; border-color: #000 !important; }
-        .receipt-print div { margin-bottom: 2px !important; }
-        @page { size: 80mm auto; margin: 0mm; }
-    }
-</style>
+        
+        /* Smooth Transition Animations */
+        .fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Active Menu Style */
+        .nav-item.active {
+            background: linear-gradient(to right, #eff6ff, #ffffff);
+            border-right: 4px solid #2563eb;
+            color: #2563eb;
+        }
+        
+        /* Mobile Nav Active */
+        .mobile-nav-item.active {
+            color: #2563eb;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Print Styles */
+        @media print {
+            body * { visibility: hidden; }
+            #receiptModal, #receiptModal * { visibility: visible; }
+            #receiptModal {
+                position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0;
+                background: white !important; box-shadow: none !important;
+            }
+            #receiptModal button, .no-print-in-modal, .flex.gap-2, .mobile-nav { display: none !important; }
+            .receipt-print {
+                width: 72mm !important; max-width: 100% !important; padding: 0 !important; margin: 0 auto !important;
+                font-family: 'Noto Sans Lao', sans-serif !important; font-size: 14px !important;
+                font-weight: bold !important; color: #000000 !important; line-height: 1.2 !important;
+            }
+            .border-dashed { border-style: dashed !important; border-width: 1.5px !important; border-color: #000 !important; }
+            .receipt-print div { margin-bottom: 2px !important; }
+            @page { size: 80mm auto; margin: 0mm; }
+        }
+    </style>
 </head>
-<body class="bg-gray-50 h-screen flex overflow-hidden">
+<body class="bg-gray-50 h-screen flex flex-col md:flex-row overflow-hidden">
 
-    <aside class="w-64 bg-white shadow-2xl z-20 hidden md:flex flex-col transition-all duration-300">
+    <aside class="w-64 bg-white shadow-2xl z-20 hidden md:flex flex-col transition-all duration-300 h-full">
         <div class="p-6">
             <div class="flex items-center gap-3 mb-8">
                 <div class="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-500/30">
@@ -104,51 +111,21 @@ $currencies = $stmt->fetchAll();
             </div>
 
             <ul class="space-y-2">
-                <li>
-                    <a href="#" onclick="showPage('dashboard', this)" class="nav-item active flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
-                        <i class="fas fa-chart-pie w-8 text-center"></i>
-                        <span class="font-medium">ແດຊບອດ</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showPage('sell', this)" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
-                        <i class="fas fa-cash-register w-8 text-center"></i>
-                        <span class="font-medium">ຂາຍສິນຄ້າ</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showPage('sales', this)" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
-                        <i class="fas fa-receipt w-8 text-center"></i>
-                        <span class="font-medium">ປະຫວັດການຂາຍ</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="products.php" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
-                        <i class="fas fa-box w-8 text-center"></i>
-                        <span class="font-medium">ຈັດການສິນຄ້າ</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showPage('shop', this)" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200">
-                        <i class="fas fa-store w-8 text-center"></i>
-                        <span class="font-medium">ຕັ້ງຄ່າຮ້ານຄ້າ</span>
-                    </a>
-                </li>
+                <li><a href="#" onclick="showPage('dashboard', this)" class="nav-item active flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200"><i class="fas fa-chart-pie w-8 text-center"></i><span class="font-medium">ແດຊບອດ</span></a></li>
+                <li><a href="#" onclick="showPage('sell', this)" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200"><i class="fas fa-cash-register w-8 text-center"></i><span class="font-medium">ຂາຍສິນຄ້າ</span></a></li>
+                <li><a href="#" onclick="showPage('sales', this)" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200"><i class="fas fa-receipt w-8 text-center"></i><span class="font-medium">ປະຫວັດການຂາຍ</span></a></li>
+                <li><a href="products.php" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200"><i class="fas fa-box w-8 text-center"></i><span class="font-medium">ຈັດການສິນຄ້າ</span></a></li>
+                <li><a href="#" onclick="showPage('shop', this)" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200"><i class="fas fa-store w-8 text-center"></i><span class="font-medium">ຕັ້ງຄ່າຮ້ານຄ້າ</span></a></li>
                  <?php if ($_SESSION['user_role'] === 'admin'): ?>
-                <div class="pt-4 pb-2">
-                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase">Admin</p>
-                </div>
+                <div class="pt-4 pb-2"><p class="px-3 text-xs font-semibold text-gray-400 uppercase">Admin</p></div>
                 <li><a href="employees.php" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200"><i class="fas fa-users w-8 text-center"></i><span class="font-medium">ພະນັກງານ</span></a></li>
                 <li><a href="currency.php" class="nav-item flex items-center p-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all duration-200"><i class="fas fa-coins w-8 text-center"></i><span class="font-medium">ສະກຸນເງິນ</span></a></li>
                 <?php endif; ?>
             </ul>
         </div>
-        
         <div class="mt-auto p-4 border-t border-gray-100">
             <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
-                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                    <?php echo substr($_SESSION['user_name'], 0, 1); ?>
-                </div>
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold"><?php echo substr($_SESSION['user_name'], 0, 1); ?></div>
                 <div class="overflow-hidden">
                     <p class="text-sm font-bold text-gray-800 truncate"><?php echo $_SESSION['user_name']; ?></p>
                     <a href="logout.php" class="text-xs text-red-500 hover:text-red-700 font-medium">ອອກຈາກລະບົບ</a>
@@ -157,13 +134,16 @@ $currencies = $stmt->fetchAll();
         </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative">
-        <div class="md:hidden flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm">
+    <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative w-full h-full">
+        <div class="md:hidden flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm sticky top-0 z-10">
             <h1 class="text-lg font-bold text-blue-600">POS System</h1>
-            <a href="logout.php" class="text-red-500"><i class="fas fa-sign-out-alt"></i></a>
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-bold text-gray-600"><?php echo $_SESSION['user_name']; ?></span>
+                <a href="logout.php" class="text-red-500 bg-red-50 p-2 rounded-lg"><i class="fas fa-sign-out-alt"></i></a>
+            </div>
         </div>
 
-        <div id="dashboard" class="page fade-in-up">
+        <div id="dashboard" class="page fade-in-up pb-20 md:pb-0">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">ພາບລວມລະບົບ</h2>
                 <span class="text-sm text-gray-500"><?php echo date('d/m/Y'); ?></span>
@@ -180,6 +160,7 @@ $currencies = $stmt->fetchAll();
                     </div>
                 </div>
                 
+                <?php if ($_SESSION['user_role'] === 'admin'): ?>
                 <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg shadow-green-500/30">
                     <div class="flex justify-between items-start">
                         <div>
@@ -189,6 +170,7 @@ $currencies = $stmt->fetchAll();
                         <div class="p-2 bg-white/20 rounded-lg"><i class="fas fa-coins text-2xl"></i></div>
                     </div>
                 </div>
+                <?php endif; ?>
                 
                 <div class="bg-white rounded-2xl p-6 text-gray-800 shadow-md border border-gray-100">
                     <div class="flex justify-between items-start">
@@ -246,10 +228,10 @@ $currencies = $stmt->fetchAll();
             </div>
         </div>
 
-        <div id="sell" class="page hidden fade-in-up">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">ຂາຍສິນຄ້າ</h2>
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-150px)]">
-                <div class="lg:col-span-7 flex flex-col gap-6">
+        <div id="sell" class="page hidden fade-in-up pb-24 md:pb-0">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 hidden md:block">ຂາຍສິນຄ້າ</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[calc(100vh-150px)]">
+                <div class="lg:col-span-7 flex flex-col gap-6 order-1 lg:order-1">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <form id="sellForm">
                             <div class="mb-4">
@@ -259,7 +241,7 @@ $currencies = $stmt->fetchAll();
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4 mb-4">
-                                <div>
+                                <div class="col-span-2 md:col-span-1">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">ເລືອກສິນຄ້າ</label>
                                     <select id="productSelect" class="w-full p-3 border border-gray-200 rounded-xl bg-gray-50">
                                         <option value="">-- ຄົ້ນຫາສິນຄ້າ --</option>
@@ -270,17 +252,18 @@ $currencies = $stmt->fetchAll();
                                                 data-cost="<?php echo $product['cost']; ?>" 
                                                 data-stock="<?php echo $product['stock']; ?>" 
                                                 data-name="<?php echo htmlspecialchars($product['name']); ?>">
-                                                <?php echo htmlspecialchars($product['name']); ?> (ເຫຼືອ: <?php echo $product['stock']; ?>)
+                                                <?php echo htmlspecialchars($product['name']); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                                <div>
+                                <div class="col-span-2 md:col-span-1">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">ຈຳນວນ</label>
                                     <input type="number" id="quantityInput" value="1" min="1" class="w-full p-3 border border-gray-200 rounded-xl text-center font-bold">
                                 </div>
                             </div>
-                            <input type="hidden" id="priceInput"> <div class="flex gap-3">
+                            <input type="hidden" id="priceInput"> 
+                            <div class="flex gap-3">
                                 <button type="button" onclick="addToCart()" class="flex-1 bg-blue-600 text-white p-4 rounded-xl hover:bg-blue-700 font-bold shadow-lg shadow-blue-500/30 transition-all active:scale-95">
                                     <i class="fas fa-plus-circle mr-2"></i> ເພີ່ມລົງກະຕ່າ
                                 </button>
@@ -292,14 +275,14 @@ $currencies = $stmt->fetchAll();
                     </div>
                 </div>
 
-                <div class="lg:col-span-5 flex flex-col h-full">
-                    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col h-full overflow-hidden">
+                <div class="lg:col-span-5 flex flex-col h-full order-2 lg:order-2">
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col h-full overflow-hidden min-h-[400px]">
                         <div class="p-5 bg-gray-800 text-white flex justify-between items-center">
-                            <h3 class="font-bold text-lg"><i class="fas fa-shopping-cart mr-2"></i> ກະຕ່າສິນຄ້າ</h3>
+                            <h3 class="font-bold text-lg"><i class="fas fa-shopping-cart mr-2"></i> ກະຕ່າ (<span id="cartCountMobile">0</span>)</h3>
                             <button onclick="clearCart()" class="text-red-300 hover:text-white text-sm"><i class="fas fa-trash mr-1"></i> ລ້າງ</button>
                         </div>
                         
-                        <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                        <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 max-h-[300px] lg:max-h-none">
                             <div class="text-gray-400 text-center py-10 flex flex-col items-center">
                                 <i class="fas fa-basket-shopping text-4xl mb-3 opacity-30"></i>
                                 <p>ຍັງບໍ່ມີສິນຄ້າໃນກະຕ່າ</p>
@@ -320,10 +303,12 @@ $currencies = $stmt->fetchAll();
                                     </div>
                                     <span id="discountAmount" class="text-red-500">-0</span>
                                 </div>
+                                <?php if ($_SESSION['user_role'] === 'admin'): ?>
                                 <div class="flex justify-between text-sm text-green-600">
                                     <span>ກຳໄລ:</span>
                                     <span id="realProfit">0 บาท</span>
                                 </div>
+                                <?php endif; ?>
                                 <div class="flex justify-between items-end pt-4 border-t border-dashed">
                                     <span class="text-gray-800 font-bold text-lg">ຍອດຊຳລະ:</span>
                                     <div class="text-right">
@@ -341,38 +326,48 @@ $currencies = $stmt->fetchAll();
             </div>
         </div>
 
-        <div id="sales" class="page hidden fade-in-up">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">ປະຫວັດການຂາຍ</h2>
+        <div id="sales" class="page hidden fade-in-up pb-24 md:pb-0">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 hidden md:block">ປະຫວັດການຂາຍ</h2>
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-                    <div class="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
-                        <input type="date" id="salesDateFilter" class="bg-transparent border-none p-2 outline-none text-gray-700" value="<?php echo date('Y-m-d'); ?>">
-                        <button onclick="filterSales()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-search"></i>
+                    
+                    <div class="flex flex-col md:flex-row items-start md:items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 w-full md:w-auto">
+                        <div class="flex items-center w-full md:w-auto gap-2">
+                            <span class="text-gray-500 text-sm whitespace-nowrap">ຈາກ:</span>
+                            <input type="date" id="startDate" class="bg-white md:bg-transparent border md:border-none p-2 rounded outline-none text-gray-700 w-full" value="<?php echo date('Y-m-d'); ?>">
+                        </div>
+                        <div class="flex items-center w-full md:w-auto gap-2">
+                            <span class="text-gray-500 text-sm whitespace-nowrap">ຫາ:</span>
+                            <input type="date" id="endDate" class="bg-white md:bg-transparent border md:border-none p-2 rounded outline-none text-gray-700 w-full" value="<?php echo date('Y-m-d'); ?>">
+                        </div>
+                        <button onclick="filterSales()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors w-full md:w-auto">
+                            <i class="fas fa-search mr-1"></i> ຄົ້ນຫາ
                         </button>
                     </div>
                     
-                    <div class="flex-1 max-w-xs ml-4">
+                    <div class="flex-1 max-w-xs md:ml-4 w-full">
                         <input type="text" id="salesSearchInput" onkeyup="searchSalesTable()" placeholder="ຄົ້ນຫາ ບາໂຄດ..." class="w-full p-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500">
                     </div>
 
-                    <div class="flex gap-4">
+                    <div class="flex gap-4 w-full md:w-auto justify-end">
                         <div class="text-right">
                             <p class="text-xs text-gray-500">ຍອດຂາຍລວມ</p>
                             <p class="text-xl font-bold text-blue-600" id="summaryTotalSales">0</p>
                         </div>
+                        <?php if ($_SESSION['user_role'] === 'admin'): ?>
                         <div class="text-right">
                             <p class="text-xs text-gray-500">ກຳໄລລວມ</p>
                             <p class="text-xl font-bold text-green-600" id="summaryTotalProfit">0</p>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </div>
-                <div id="salesList" class="overflow-x-auto">
+                <div id="salesList" class="overflow-x-auto -mx-4 md:mx-0">
                     </div>
             </div>
         </div>
 
-        <div id="shop" class="page hidden fade-in-up">
+        <div id="shop" class="page hidden fade-in-up pb-24 md:pb-0">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">ຕັ້ງຄ່າຮ້ານຄ້າ</h2>
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 max-w-2xl p-8">
                 <form id="shopForm" class="space-y-6">
@@ -407,8 +402,44 @@ $currencies = $stmt->fetchAll();
 
     </main>
 
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-2 z-30 shadow-[0_-5px_10px_rgba(0,0,0,0.05)] mobile-nav">
+        <button onclick="showPage('dashboard', this)" class="mobile-nav-item active flex flex-col items-center p-2 text-gray-400 w-full transition-colors">
+            <i class="fas fa-chart-pie text-xl mb-1"></i> <span class="text-[10px] font-medium">ແດຊບອດ</span>
+        </button>
+        <button onclick="showPage('sell', this)" class="mobile-nav-item flex flex-col items-center p-2 text-gray-400 w-full transition-colors">
+            <i class="fas fa-cash-register text-xl mb-1"></i> <span class="text-[10px] font-medium">ຂາຍ</span>
+        </button>
+        <button onclick="showPage('sales', this)" class="mobile-nav-item flex flex-col items-center p-2 text-gray-400 w-full transition-colors">
+            <i class="fas fa-receipt text-xl mb-1"></i> <span class="text-[10px] font-medium">ປະຫວັດ</span>
+        </button>
+        <button onclick="toggleMobileMenu()" class="mobile-nav-item flex flex-col items-center p-2 text-gray-400 w-full transition-colors">
+            <i class="fas fa-bars text-xl mb-1"></i> <span class="text-[10px] font-medium">ເມນູ</span>
+        </button>
+    </nav>
+
+    <div id="mobileMenuModal" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity">
+        <div class="absolute right-0 top-0 bottom-0 w-64 bg-white shadow-2xl p-6 transform translate-x-full transition-transform duration-300" id="mobileMenuContent">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-lg text-gray-800">ເມນູເພີ່ມເຕີມ</h3>
+                <button onclick="toggleMobileMenu()" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <ul class="space-y-4">
+                <li><a href="products.php" class="flex items-center gap-3 text-gray-600 p-2 rounded-lg hover:bg-gray-50"><i class="fas fa-box w-6 text-center text-blue-600"></i> ຈັດການສິນຄ້າ</a></li>
+                <li><a href="#" onclick="showPage('shop', null); toggleMobileMenu();" class="flex items-center gap-3 text-gray-600 p-2 rounded-lg hover:bg-gray-50"><i class="fas fa-store w-6 text-center text-blue-600"></i> ຕັ້ງຄ່າຮ້ານຄ້າ</a></li>
+                <?php if ($_SESSION['user_role'] === 'admin'): ?>
+                <div class="border-t border-gray-100 my-2"></div>
+                <p class="text-xs text-gray-400 uppercase font-bold">Admin Only</p>
+                <li><a href="employees.php" class="flex items-center gap-3 text-gray-600 p-2 rounded-lg hover:bg-gray-50"><i class="fas fa-users w-6 text-center text-blue-600"></i> ພະນັກງານ</a></li>
+                <li><a href="currency.php" class="flex items-center gap-3 text-gray-600 p-2 rounded-lg hover:bg-gray-50"><i class="fas fa-coins w-6 text-center text-blue-600"></i> ສະກຸນເງິນ</a></li>
+                <?php endif; ?>
+                <div class="border-t border-gray-100 my-2"></div>
+                <li><a href="logout.php" class="flex items-center gap-3 text-red-500 p-2 rounded-lg hover:bg-red-50"><i class="fas fa-sign-out-alt w-6 text-center"></i> ອອກຈາກລະບົບ</a></li>
+            </ul>
+        </div>
+    </div>
+
     <div id="checkoutModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl transform transition-all scale-100">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                 <h3 class="text-xl font-bold text-gray-800">ຢືນຢັນການຊຳລະເງິນ</h3>
                 <button onclick="closeCheckoutModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
@@ -439,21 +470,22 @@ $currencies = $stmt->fetchAll();
     </div>
 
     <div id="receiptModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-[350px] shadow-2xl"> <div class="p-4 border-b flex justify-between items-center no-print-in-modal">
+        <div class="bg-white w-[350px] shadow-2xl max-h-[90vh] flex flex-col"> 
+            <div class="p-4 border-b flex justify-between items-center no-print-in-modal">
                 <h3 class="font-bold">ໃບເສັດ</h3>
                 <button onclick="closeReceiptModal()"><i class="fas fa-times"></i></button>
             </div>
-            <div id="receiptContent" class="p-4 bg-white text-black font-mono text-sm">
+            <div id="receiptContent" class="p-4 bg-white text-black font-mono text-sm overflow-y-auto flex-1">
                 </div>
-            <div class="p-4 border-t flex gap-2 no-print-in-modal">
+            <div class="p-4 border-t flex gap-2 no-print-in-modal bg-white">
                 <button onclick="printReceipt()" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"><i class="fas fa-print mr-2"></i> ພິມ</button>
                 <button onclick="closeReceiptModal()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300">ປິດ</button>
             </div>
         </div>
     </div>
 
-    <div id="successModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4 animate-bounce-in">
+    <div id="successModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center w-full max-w-sm">
             <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
                 <i class="fas fa-check"></i>
             </div>
@@ -467,12 +499,12 @@ $currencies = $stmt->fetchAll();
     </div>
 
     <div id="adminDetailModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
-            <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
+        <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 bg-gray-50 border-b flex justify-between items-center sticky top-0">
                 <h3 class="font-bold text-gray-800"><i class="fas fa-info-circle text-blue-600 mr-2"></i>ລາຍລະອຽດການຂາຍ (Admin)</h3>
                 <button onclick="document.getElementById('adminDetailModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-6 overflow-y-auto max-h-[70vh]">
+            <div class="p-6 overflow-y-auto">
                 <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
                     <div><span class="text-gray-500">ເລກບິນ:</span> <span id="ad_saleId" class="font-bold"></span></div>
                     <div><span class="text-gray-500">ວັນທີ:</span> <span id="ad_saleDate" class="font-bold"></span></div>
@@ -498,26 +530,51 @@ $currencies = $stmt->fetchAll();
                     </tfoot>
                 </table>
             </div>
-            <div class="p-4 border-t bg-gray-50 text-right">
+            <div class="p-4 border-t bg-gray-50 text-right sticky bottom-0">
                 <button onclick="document.getElementById('adminDetailModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">ປິດ</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ປະກາດສຽງແຈ້ງເຕືອນ (ໄວ້ເທິງສຸດເລີຍ) 🔊
-    const soundError = new Audio('sound/new-notification-010-352755.mp3');
+        // ປະກາດ Role ຂອງ User
+        const userRole = "<?php echo $_SESSION['user_role']; ?>";
+        // ປະກາດສຽງແຈ້ງເຕືອນ (ຟັງຊັນເກົ່າຂອງເຈົ້າ)
+        const soundError = new Audio('sound/new-notification-010-352755.mp3');
+        
         let cart = [];
         const products = <?php echo json_encode($products); ?>;
         const currencies = <?php echo json_encode($currencies); ?>;
         let currentSale = null;
 
+        // --- Mobile Menu Logic ---
+        function toggleMobileMenu() {
+            const modal = document.getElementById('mobileMenuModal');
+            const content = document.getElementById('mobileMenuContent');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => content.classList.remove('translate-x-full'), 10);
+            } else {
+                content.classList.add('translate-x-full');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
         // --- Navigation ---
         function showPage(pageId, element) {
             // Update Active Menu
-            if(element) {
-                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-                element.classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active', 'text-blue-600'));
+            
+            // Highlight Desktop Menu
+            const desktopLink = document.querySelector(`.nav-item[onclick="showPage('${pageId}', this)"]`);
+            if (desktopLink) desktopLink.classList.add('active');
+
+            // Highlight Mobile Menu
+            const mobileBtn = document.querySelector(`.mobile-nav-item[onclick="showPage('${pageId}', this)"]`);
+            if (mobileBtn) {
+                mobileBtn.classList.add('active', 'text-blue-600');
+                mobileBtn.classList.remove('text-gray-400');
             }
             
             // Show Page with Animation
@@ -574,13 +631,12 @@ $currencies = $stmt->fetchAll();
             const qtyInput = document.getElementById('quantityInput');
             const qty = parseInt(qtyInput.value);
             
-            // Check Stock
-            // Check Stock
-    if (qty > product.stock) {
-        soundError.currentTime = 0;
-        soundError.play(); // 🔊 ຫຼິ້ນສຽງ
-        return alert(`ສິນຄ້າເຫຼືອພຽງ ${product.stock} ອັນ`); // ແຈ້ງເຕືອນ
-    }
+            // Check Stock (ຟັງຊັນເກົ່າຂອງເຈົ້າ)
+            if (qty > product.stock) {
+                soundError.currentTime = 0;
+                soundError.play(); // 🔊 ຫຼິ້ນສຽງ
+                return alert(`ສິນຄ້າເຫຼືອພຽງ ${product.stock} ອັນ`); // ແຈ້ງເຕືອນ
+            }
 
             const existingItem = cart.find(item => item.id == product.id);
             if (existingItem) {
@@ -612,8 +668,10 @@ $currencies = $stmt->fetchAll();
 
         function updateCartUI() {
             const container = document.getElementById('cartItems');
-            const count = document.getElementById('cartCount'); // Optional usage
+            const mobileCount = document.getElementById('cartCountMobile');
             
+            if (mobileCount) mobileCount.innerText = cart.length; // ອັບເດດເລກໃນມືຖື
+
             if (cart.length === 0) {
                 container.innerHTML = `
                     <div class="text-gray-400 text-center py-10 flex flex-col items-center">
@@ -689,7 +747,11 @@ $currencies = $stmt->fetchAll();
                 document.getElementById('discountAmount').innerText = '-' + discountAmount.toLocaleString();
                 document.getElementById('cartTotal').innerText = total.toLocaleString();
                 document.getElementById('cartTotalLak').innerText = totalInLak.toLocaleString() + ' ກີບ';
-                document.getElementById('realProfit').innerText = realProfit.toLocaleString();
+                
+                // (Hide Profit Logic)
+                if(document.getElementById('realProfit')) {
+                    document.getElementById('realProfit').innerText = realProfit.toLocaleString();
+                }
             }
         }
 
@@ -820,16 +882,23 @@ $currencies = $stmt->fetchAll();
 
         // --- Sales History & Delete Logic ---
         function filterSales() {
-            const date = document.getElementById('salesDateFilter').value;
-            fetch('get_sales.php?date=' + date)
+            // (Date Range Filter Logic - Updated)
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (!startDate || !endDate) { alert("ກະລຸນາເລືອກວັນທີໃຫ້ຄົບຖ້ວນ"); return; }
+
+            fetch(`get_sales.php?start_date=${startDate}&end_date=${endDate}`)
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('summaryTotalSales').innerText = parseFloat(data.summary?.total_sales || 0).toLocaleString();
-                    document.getElementById('summaryTotalProfit').innerText = parseFloat(data.summary?.total_profit || 0).toLocaleString();
+                    
+                    if(document.getElementById('summaryTotalProfit')) {
+                        document.getElementById('summaryTotalProfit').innerText = parseFloat(data.summary?.total_profit || 0).toLocaleString();
+                    }
                     
                     const list = document.getElementById('salesList');
                     if(data.sales.length === 0) {
-                        list.innerHTML = '<div class="text-center p-8 text-gray-400">ບໍ່ພົບລາຍການຂາຍ</div>';
+                        list.innerHTML = '<div class="text-center p-8 text-gray-400">ບໍ່ພົບລາຍການຂາຍໃນຊ່ວງເວລານີ້</div>';
                         return;
                     }
                     
@@ -848,10 +917,19 @@ $currencies = $stmt->fetchAll();
                     data.sales.forEach(sale => {
                         let barcodes = sale.barcodes || '-';
                         let displayBarcodes = barcodes.length > 30 ? barcodes.substring(0, 30) + '...' : barcodes;
+                        
+                        // Admin Button Check
+                        let adminBtn = '';
+                        if (userRole === 'admin') {
+                            adminBtn = `<button onclick="viewAdminDetail(${sale.id})" class="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg" title="ເບິ່ງຕົ້ນທຶນ/ກຳໄລ"><i class="fas fa-eye"></i></button>`;
+                        }
 
                         html += `
                         <tr class="hover:bg-gray-50 transition-colors sales-row" data-search="${barcodes.toLowerCase()} ${sale.id}">
-                            <td class="p-3 text-gray-600 whitespace-nowrap">${new Date(sale.sale_date).toLocaleTimeString('lo-LA')}</td>
+                            <td class="p-3 text-gray-600 whitespace-nowrap">
+                                ${new Date(sale.sale_date).toLocaleDateString('lo-LA')} 
+                                <br><small class="text-gray-400">${new Date(sale.sale_date).toLocaleTimeString('lo-LA')}</small>
+                            </td>
                             <td class="p-3 text-gray-500 font-mono text-xs" title="${barcodes}">
                                 <i class="fas fa-barcode mr-1"></i>${displayBarcodes}
                             </td>
@@ -860,7 +938,7 @@ $currencies = $stmt->fetchAll();
                             <td class="p-3 text-center whitespace-nowrap">
                                 <div class="flex items-center justify-center gap-2">
                                     <button onclick="viewSaleDetail(${sale.id})" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="ພິມໃບເສັດ"><i class="fas fa-print"></i></button>
-                                    <button onclick="viewAdminDetail(${sale.id})" class="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg" title="ເບິ່ງຕົ້ນທຶນ/ກຳໄລ"><i class="fas fa-eye"></i></button>
+                                    ${adminBtn}
                                     <button onclick="deleteSale(${sale.id})" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="ລຶບລາຍການ"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                             </td>
@@ -938,8 +1016,7 @@ $currencies = $stmt->fetchAll();
                     if (data.success) {
                         alert(data.message);
                         filterSales(); // Refresh sales list
-                        // ຖ້າເປັນມື້ປັດຈຸບັນ Reload Dashboard
-                        if(document.getElementById('salesDateFilter').value === new Date().toISOString().split('T')[0]) {
+                        if(document.getElementById('startDate').value === new Date().toISOString().split('T')[0]) {
                             location.reload(); 
                         }
                     } else {
