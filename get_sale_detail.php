@@ -25,7 +25,7 @@ try {
     $sale['employee_name'] = $_SESSION['user_name'] ?? 'System';
 
     $stmt = $pdo->prepare("
-        SELECT si.*, p.name, p.barcode 
+        SELECT si.id as item_id, si.*, p.name, p.barcode 
         FROM sale_items si
         JOIN products p ON si.product_id = p.id
         WHERE si.sale_id = ?

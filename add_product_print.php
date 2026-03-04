@@ -126,177 +126,315 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ເພີ່ມສິນຄ້າ & ພິມບາໂຄດ</title>
+    <title>ເພີ່ມສິນຄ້າ & ພິມບາໂຄດ - POS System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
+        * { font-family: 'Noto Sans Lao', 'Inter', sans-serif; }
+        
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        /* Cards */
+        .card {
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        /* Icon badges */
+        .icon-primary {
+            background: linear-gradient(135deg, #6366f1, #818cf8);
+        }
+        .icon-indigo {
+            background: linear-gradient(135deg, #6366f1, #818cf8);
+        }
+        .icon-success {
+            background: linear-gradient(135deg, #10b981, #34d399);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #818cf8);
+            color: white;
+            border-radius: 12px;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            color: white;
+            border-radius: 12px;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16,185,129,0.35);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            color: white;
+            border-radius: 12px;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239,68,68,0.35);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid #e5e7eb;
+            color: #6b7280;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        .btn-ghost:hover {
+            background: #f9fafb;
+        }
+
+        /* Inputs */
+        .input-field {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        .input-field:focus {
+            background: #ffffff;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+            outline: none;
+        }
+
+        /* Tables */
+        .table-header {
+            background: #f9fafb;
+        }
+        .table-header th {
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Scrollbar */
         .scroll-container {
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
-        .scroll-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        .scroll-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        .scroll-container::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 10px;
-        }
-        .scroll-container::-webkit-scrollbar-thumb:hover {
-            background: #a1a1a1;
-        }
-        /* ແກ້ໄຂບັນຫາ checkbox ຄລິກບໍ່ໄດ້ */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f0f2f5; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* Checkbox */
         .recent-checkbox {
             cursor: pointer;
             width: 18px;
             height: 18px;
+            accent-color: #6366f1;
         }
+
         tbody tr {
             cursor: pointer;
         }
         tbody tr:hover {
-            background-color: #f0f9ff !important;
+            background-color: #f0f2ff !important;
+        }
+
+        /* Section title */
+        .section-title {
+            color: #111827;
+            font-weight: 700;
+        }
+        .section-subtitle {
+            color: #6b7280;
+        }
+
+        /* Filter box */
+        .filter-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+        }
+
+        /* Info bar */
+        .info-bar {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="min-h-screen">
 
-    <nav class="bg-white shadow-sm border-b border-gray-100 p-4">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <a href="index.php" class="bg-gray-100 p-2 rounded-lg hover:bg-gray-200 text-gray-600">
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="index.php" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all border border-gray-200">
                     <i class="fas fa-arrow-left"></i>
                 </a>
-                <h1 class="text-xl font-bold text-gray-800">ເພີ່ມສິນຄ້າ & ພິມບາໂຄດ</h1>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">ເພີ່ມສິນຄ້າ & ພິມບາໂຄດ</h1>
+                    <p class="text-xs text-gray-400">ເພີ່ມສິນຄ້າໃໝ່ ແລະ ພິມສະຕິກເກີ</p>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container mx-auto p-4 lg:p-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h2 class="text-lg font-bold text-blue-600 mb-4"><i class="fas fa-plus-circle mr-2"></i>ຂໍ້ມູນສິນຄ້າໃໝ່</h2>
-                <form id="productForm" class="space-y-4">
+            <!-- Add Product Form -->
+            <div class="card p-6">
+                <h2 class="text-lg section-title mb-6 flex items-center">
+                    <div class="w-10 h-10 icon-primary rounded-xl flex items-center justify-center text-white mr-3">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    ຂໍ້ມູນສິນຄ້າໃໝ່
+                </h2>
+                <form id="productForm" class="space-y-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">ບາໂຄດ</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-barcode mr-2 text-indigo-500"></i>ບາໂຄດ</label>
                         <div class="flex gap-2">
-                            <input type="text" id="barcode" name="barcode" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none uppercase" placeholder="ລະຫັດສິນຄ້າ..." required>
-                            <button type="button" onclick="generateRandomBarcode()" class="bg-gray-100 text-gray-600 px-3 rounded-xl hover:bg-gray-200" title="ສຸ່ມບາໂຄດ"><i class="fas fa-random"></i></button>
+                            <input type="text" id="barcode" name="barcode" class="input-field w-full p-3 uppercase font-medium" placeholder="ລະຫັດສິນຄ້າ..." required>
+                            <button type="button" onclick="generateRandomBarcode()" class="btn-ghost text-gray-500 px-4" title="ສຸ່ມບາໂຄດ"><i class="fas fa-random"></i></button>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">ຊື່ສິນຄ້າ</label>
-                        <input type="text" id="name" name="name" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="ຊື່ສິນຄ້າ..." required>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-tag mr-2 text-indigo-500"></i>ຊື່ສິນຄ້າ</label>
+                        <input type="text" id="name" name="name" class="input-field w-full p-3" placeholder="ຊື່ສິນຄ້າ..." required>
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">ຈຳນວນ</label>
-                            <input type="number" id="stock" name="stock" value="1" min="1" class="w-full p-3 border rounded-xl text-center">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-boxes mr-2 text-indigo-500"></i>ຈຳນວນ</label>
+                            <input type="number" id="stock" name="stock" value="1" min="1" class="input-field w-full p-3 text-center font-bold">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">ຕົ້ນທຶນ</label>
-                            <input type="number" id="cost" name="cost" value="0" class="w-full p-3 border rounded-xl text-right">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-coins mr-2 text-indigo-500"></i>ຕົ້ນທຶນ</label>
+                            <input type="number" id="cost" name="cost" value="0" class="input-field w-full p-3 text-right font-medium">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">ລາຄາຂາຍ</label>
-                            <input type="number" id="price" name="price" value="0" class="w-full p-3 border rounded-xl text-right font-bold text-blue-600">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-money-bill mr-2 text-indigo-500"></i>ລາຄາຂາຍ</label>
+                            <input type="number" id="price" name="price" value="0" class="input-field w-full p-3 text-right font-bold">
                         </div>
                     </div>
 
                     <div class="pt-4">
-                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-bold shadow-lg shadow-blue-500/30 transition-all">
+                        <button type="submit" class="btn-primary w-full py-3 font-bold">
                             <i class="fas fa-save mr-2"></i> ບັນທຶກ ແລະ ເພີ່ມລົງລາຍການພິມ
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- ສ່ວນໃໝ່: ລາຍການສິນຄ້າທີ່ເພີ່ມໃໝ່ລ່າສຸດ -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col" style="max-height: 80vh;">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-lg font-bold text-purple-600"><i class="fas fa-history mr-2"></i>ສິນຄ້າລ່າສຸດ</h2>
-                    <button onclick="loadRecentProducts()" class="text-sm text-blue-500 hover:text-blue-700"><i class="fas fa-sync-alt mr-1"></i>ໂຫຼດໃໝ່</button>
+            <!-- Recent Products -->
+            <div class="card p-6 flex flex-col" style="max-height: 80vh;">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
+                    <h2 class="text-lg section-title flex items-center">
+                        <div class="w-10 h-10 icon-indigo rounded-xl flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        ສິນຄ້າລ່າສຸດ
+                    </h2>
+                    <button onclick="loadRecentProducts()" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1 rounded-lg hover:bg-indigo-50 transition-all"><i class="fas fa-sync-alt mr-1"></i>ໂຫຼດໃໝ່</button>
                 </div>
                 
-                <!-- ເລືອກວັນທີ -->
-                <div class="mb-3 p-3 bg-purple-50 rounded-xl">
-                    <label class="block text-xs font-medium text-purple-700 mb-1"><i class="fas fa-calendar-alt mr-1"></i>ເລືອກວັນທີ</label>
+                <!-- Date Filter -->
+                <div class="mb-4 p-4 filter-box">
+                    <label class="block text-xs font-semibold text-gray-600 mb-2"><i class="fas fa-calendar-alt mr-1 text-indigo-500"></i>ເລືອກວັນທີ</label>
                     <div class="flex gap-2">
-                        <select id="dateSelect" onchange="loadProductsByDate()" class="flex-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none">
+                        <select id="dateSelect" onchange="loadProductsByDate()" class="input-field flex-1 p-2 text-sm">
                             <option value="">-- ທັງໝົດ (ລ່າສຸດ 50) --</option>
                         </select>
-                        <button onclick="loadAvailableDates()" class="bg-purple-100 text-purple-600 px-3 rounded-lg hover:bg-purple-200" title="ໂຫຼດວັນທີ">
+                        <button onclick="loadAvailableDates()" class="btn-ghost text-indigo-600 px-3" title="ໂຫຼດວັນທີ">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
-                    <div class="flex items-center gap-2 mt-2">
-                        <input type="checkbox" id="unprintedOnly" onchange="loadProductsByDate()" class="rounded">
-                        <label for="unprintedOnly" class="text-xs text-red-600 font-medium">ສະແດງສະເພາະທີ່ຍັງບໍ່ພິມ</label>
+                    <div class="flex items-center gap-2 mt-3">
+                        <input type="checkbox" id="unprintedOnly" onchange="loadProductsByDate()" class="rounded accent-indigo-600">
+                        <label for="unprintedOnly" class="text-xs text-red-600 font-semibold">ສະແດງສະເພາະທີ່ຍັງບໍ່ພິມ</label>
                     </div>
                 </div>
 
-                <div class="flex gap-2 mb-3">
-                    <button onclick="selectAllRecent()" class="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-200">ເລືອກທັງໝົດ</button>
-                    <button onclick="selectUnprinted()" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-lg hover:bg-red-200">ເລືອກທີ່ຍັງບໍ່ພິມ</button>
-                    <button onclick="deselectAll()" class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-200">ຍົກເລີກທັງໝົດ</button>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="selectAllRecent()" class="text-xs btn-primary px-3 py-2">ເລືອກທັງໝົດ</button>
+                    <button onclick="selectUnprinted()" class="text-xs btn-danger px-3 py-2">ເລືອກທີ່ຍັງບໍ່ພິມ</button>
+                    <button onclick="deselectAll()" class="text-xs btn-ghost px-3 py-2">ຍົກເລີກ</button>
                 </div>
 
-                <div class="flex-1 scroll-container bg-gray-50 rounded-xl p-2 mb-4" id="recentProductsContainer" style="max-height: 400px; min-height: 200px;">
+                <div class="flex-1 scroll-container bg-white rounded-xl p-3 mb-4 border border-gray-200" id="recentProductsContainer" style="max-height: 400px; min-height: 200px;">
                     <table class="w-full text-sm">
-                        <thead class="text-gray-500 border-b sticky top-0 bg-gray-50">
+                        <thead class="table-header sticky top-0">
                             <tr>
-                                <th class="pb-2 text-left w-8"><input type="checkbox" id="selectAllCheck" onchange="toggleSelectAll(this)"></th>
-                                <th class="pb-2 text-left">ສິນຄ້າ</th>
-                                <th class="pb-2 text-center">ສະຖານະ</th>
+                                <th class="pb-3 pt-2 text-left w-8"><input type="checkbox" id="selectAllCheck" onchange="toggleSelectAll(this)" class="accent-indigo-600"></th>
+                                <th class="pb-3 pt-2 text-left">ສິນຄ້າ</th>
+                                <th class="pb-3 pt-2 text-center">ສະຖານະ</th>
                             </tr>
                         </thead>
                         <tbody id="recentProductsBody">
                         </tbody>
                     </table>
-                    <div id="recentEmptyMsg" class="text-center text-gray-400 mt-10">ກຳລັງໂຫຼດ...</div>
+                    <div id="recentEmptyMsg" class="text-center text-gray-400 mt-10"><i class="fas fa-spinner fa-spin mr-2"></i>ກຳລັງໂຫຼດ...</div>
                 </div>
 
-                <div class="border-t pt-4">
-                    <button onclick="addSelectedToQueue()" class="w-full bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 font-bold shadow-lg shadow-purple-500/30 transition-all">
+                <div class="border-t border-gray-200 pt-4">
+                    <button onclick="addSelectedToQueue()" class="btn-primary w-full py-3 font-bold">
                         <i class="fas fa-plus mr-2"></i> ເພີ່ມທີ່ເລືອກລົງລາຍການພິມ
                     </button>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col" style="max-height: 80vh;">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-lg font-bold text-gray-800"><i class="fas fa-print mr-2"></i>ລາຍການທີ່ຈະພິມ</h2>
-                    <button onclick="clearList()" class="text-sm text-red-500 hover:text-red-700">ລ້າງທັງໝົດ</button>
+            <!-- Print Queue -->
+            <div class="card p-6 flex flex-col" style="max-height: 80vh;">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
+                    <h2 class="text-lg section-title flex items-center">
+                        <div class="w-10 h-10 icon-success rounded-xl flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-print"></i>
+                        </div>
+                        ລາຍການທີ່ຈະພິມ
+                    </h2>
+                    <button onclick="clearList()" class="text-sm text-red-500 hover:text-red-700 font-medium px-3 py-1 rounded-lg border border-red-200 hover:bg-red-50 transition-all"><i class="fas fa-trash mr-1"></i>ລ້າງ</button>
                 </div>
                 
-                <div class="flex-1 scroll-container bg-gray-50 rounded-xl p-2 mb-4" id="printListContainer" style="max-height: 400px; min-height: 200px;">
+                <div class="flex-1 scroll-container bg-white rounded-xl p-3 mb-4 border border-gray-200" id="printListContainer" style="max-height: 400px; min-height: 200px;">
                     <table class="w-full text-sm">
-                        <thead class="text-gray-500 border-b">
+                        <thead class="table-header">
                             <tr>
-                                <th class="pb-2 text-left">ສິນຄ້າ</th>
-                                <th class="pb-2 text-center">ຈຳນວນດວງ</th>
-                                <th class="pb-2"></th>
+                                <th class="pb-3 pt-2 text-left">ສິນຄ້າ</th>
+                                <th class="pb-3 pt-2 text-center">ຈຳນວນດວງ</th>
+                                <th class="pb-3 pt-2"></th>
                             </tr>
                         </thead>
                         <tbody id="printListBody">
                             </tbody>
                     </table>
-                    <div id="emptyMsg" class="text-center text-gray-400 mt-10">ຍັງບໍ່ມີລາຍການ</div>
+                    <div id="emptyMsg" class="text-center text-gray-400 mt-10"><i class="fas fa-inbox text-4xl mb-3 block opacity-30"></i>ຍັງບໍ່ມີລາຍການ</div>
                 </div>
 
-                <div class="border-t pt-4">
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-sm text-gray-600">ຂະໜາດ: 40mm x 20mm</span>
-                        <span class="text-sm font-bold" id="totalLabels">ລວມ: 0 ດວງ</span>
+                <div class="border-t border-gray-200 pt-4">
+                    <div class="flex justify-between items-center mb-4 info-bar p-3">
+                        <span class="text-sm text-gray-600 font-medium"><i class="fas fa-ruler mr-2 text-indigo-500"></i>ຂະໜາດ: 40mm x 20mm</span>
+                        <span class="text-sm font-bold text-indigo-600" id="totalLabels">ລວມ: 0 ດວງ</span>
                     </div>
-                    <button onclick="printAllBarcodes()" class="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 font-bold shadow-lg shadow-green-500/30 transition-all">
+                    <button onclick="printAllBarcodes()" class="btn-success w-full py-3 font-bold">
                         <i class="fas fa-print mr-2"></i> ພິມບາໂຄດ
                     </button>
                 </div>
